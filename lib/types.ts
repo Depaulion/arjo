@@ -51,6 +51,12 @@ export type CircleMember = {
   user_id: string;
   role: CircleRole;
   payout_position: number | null;
+  /** Recipient Arc wallet, denormalized at join (migration 0006). */
+  payout_address: string | null;
+  /** True once this member has received their rotation payout. */
+  paid_out: boolean;
+  paid_at: string | null;
+  payout_tx_hash: string | null;
   joined_at: string;
 };
 

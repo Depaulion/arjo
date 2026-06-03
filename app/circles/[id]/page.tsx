@@ -22,6 +22,7 @@ import { CIRCLE_FREQUENCIES, type Circle } from "@/lib/types";
 import type { AnalysisMember } from "@/lib/circle-analysis";
 import { CircleInsights } from "@/components/circles/circle-insights";
 import { ContributeButton } from "@/components/circles/contribute-button";
+import { PayoutButton } from "@/components/circles/payout-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -110,6 +111,28 @@ export default async function CircleDashboardPage({
   const input = await resolveCircle(params.id);
   const data = await getCircleLedger(input);
 
+  // Is the current viewer the circle's creator (the pot owner)? Only they can
+  // trigger a rotating payout. Skipped for raw-address views.
+  let isCreator = false;
+  if (!isEvmAddress(params.id)) {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: row } = await supabase
+          .from("circles")
+          .select("created_by")
+          .eq("id", params.id)
+          .single<{ created_by: string }>();
+        isCreator = row?.created_by === user.id;
+      }
+    } catch {
+      // Supabase unavailable — treat as non-creator (hide payout control).
+    }
+  }
+
   const frequencyLabel = data.frequency
     ? CIRCLE_FREQUENCIES.find((f) => f.value === data.frequency)?.label ??
       data.frequency
@@ -191,11 +214,21 @@ export default async function CircleDashboardPage({
 
         {/* Contribute to the pot (only for real circles, not raw-address views) */}
         {!isEvmAddress(params.id) && (
-          <ContributeButton
-            circleId={params.id}
-            defaultAmount={data.contributionAmount}
-            currency={data.currency}
-          />
+          <div className="space-y-3">
+            <ContributeButton
+              circleId={params.id}
+              defaultAmount={data.contributionAmount}
+              currency={data.currency}
+            />
+            {/* The rotating payout — the defining Ajo action, creator only. */}
+            {isCreator && (
+              <PayoutButton
+                circleId={params.id}
+                potTarget={targetPot}
+                currency={data.currency}
+              />
+            )}
+          </div>
         )}
 
         {/* Not configured / RPC error banners */}
