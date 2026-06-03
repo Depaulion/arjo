@@ -1,0 +1,11 @@
+/node_modules
+/.next
+/out
+/build
+next-env.d.ts
+.env*
+# ...but keep the committed example so collaborators know what vars are needed.
+!.env.local.example
+!.env.example
+.DS_Store
+*.tsbuildinfo
