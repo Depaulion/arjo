@@ -32,12 +32,22 @@ export function WalletPanel({
 }) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [faucetCopied, setFaucetCopied] = useState(false);
   const [refreshing, startRefresh] = useTransition();
 
   function copyAddress() {
     navigator.clipboard?.writeText(address).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  // Copy the address before sending the user to the faucet so they can paste it
+  // straight in, and surface a confirmation so the silent copy is obvious.
+  function handleFaucet() {
+    navigator.clipboard?.writeText(address).then(() => {
+      setFaucetCopied(true);
+      setTimeout(() => setFaucetCopied(false), 4000);
     });
   }
 
@@ -97,20 +107,33 @@ export function WalletPanel({
       </div>
 
       {/* Faucet */}
-      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-secondary/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          Need test funds? Claim {currency} on {ARC_TESTNET.name} from the Circle
-          faucet, then refresh.
+          {faucetCopied ? (
+            <span className="font-medium text-primary">
+              Address copied — paste it into the Circle faucet, claim {currency},
+              then hit Refresh.
+            </span>
+          ) : (
+            <>
+              Need test funds? Claim {currency} on {ARC_TESTNET.name} from the
+              Circle faucet, then refresh.
+            </>
+          )}
         </p>
-        <Button size="sm" variant="secondary" asChild>
+        <Button size="sm" variant="default" className="shrink-0" asChild>
           <a
             href={ARC_TESTNET.faucetUrl}
             target="_blank"
             rel="noreferrer"
-            onClick={copyAddress}
+            onClick={handleFaucet}
           >
-            <Droplet className="h-4 w-4" />
-            Get test {currency}
+            {faucetCopied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Droplet className="h-4 w-4" />
+            )}
+            Claim test {currency}
           </a>
         </Button>
       </div>
