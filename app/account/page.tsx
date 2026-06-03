@@ -6,6 +6,7 @@ import {
   Compass,
   Flame,
   Gamepad2,
+  History,
   Lock,
   LogOut,
   PiggyBank,
@@ -27,6 +28,7 @@ import {
   type Circle,
   type CircleMember,
   type CircleRole,
+  type LedgerEntry,
   type Profile,
   type SavingsGoal,
   type SavingsPlan,
@@ -56,6 +58,7 @@ import { GoalTracker } from "@/components/dashboard/goal-tracker";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +147,7 @@ export default async function AccountPage() {
     { data: goals },
     { data: plans },
     { data: challenges },
+    { data: ledger },
   ] = await Promise.all([
     supabase
       .from("circles")
@@ -174,6 +178,13 @@ export default async function AccountPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .returns<Challenge[]>(),
+    supabase
+      .from("ledger_entries")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .returns<LedgerEntry[]>(),
   ]);
 
   const membershipRows = memberships ?? [];
@@ -216,6 +227,11 @@ export default async function AccountPage() {
   const onChainEnabled =
     isCircleConfigured() &&
     Boolean(safeProfile.arc_wallet_address && safeProfile.circle_wallet_id);
+
+  const ledgerEntries = ledger ?? [];
+  const hasPending = ledgerEntries.some(
+    (e) => e.status === "pending" && Boolean(e.circle_tx_id)
+  );
 
   // Public marketplace: public circles the member didn't create.
   const { data: publicCircles } = await supabase
@@ -421,6 +437,28 @@ export default async function AccountPage() {
             </CardHeader>
             <CardContent>
               <FinancialPlanner currency={safeProfile.preferred_stablecoin} />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* On-chain activity feed */}
+        <section>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <History className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Recent activity</CardTitle>
+                  <CardDescription>
+                    Every USDC action, settled on {ARC_TESTNET.name}.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ActivityFeed entries={ledgerEntries} hasPending={hasPending} />
             </CardContent>
           </Card>
         </section>
