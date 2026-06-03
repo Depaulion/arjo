@@ -31,6 +31,14 @@ function getClient() {
   return cachedClient;
 }
 
+/** The Arc Testnet blockchain identifier used by every Circle call here. */
+export const ARC_TESTNET_BLOCKCHAIN = ARC_BLOCKCHAIN;
+
+/** Shared, lazily-initialised Circle client for other server modules. */
+export function getCircleClient() {
+  return getClient();
+}
+
 // All users share one wallet set. Provide CIRCLE_WALLET_SET_ID via env after the
 // first run; otherwise we create one and cache it for this server instance.
 let cachedWalletSetId = process.env.CIRCLE_WALLET_SET_ID || null;

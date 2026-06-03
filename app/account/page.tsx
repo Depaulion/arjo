@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Award,
-  Brain,
   Coins,
   Compass,
   Flame,
+  Gamepad2,
   Lock,
   LogOut,
   PiggyBank,
@@ -13,18 +13,23 @@ import {
   ShieldCheck,
   Target,
   Users,
+  Vault,
   Wallet,
+  Wand2,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
+import { isCircleConfigured } from "@/lib/circle";
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import {
+  type Challenge,
   type Circle,
   type CircleMember,
   type CircleRole,
   type Profile,
   type SavingsGoal,
+  type SavingsPlan,
 } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +53,9 @@ import {
   type HealthCircle,
 } from "@/components/dashboard/circle-health";
 import { GoalTracker } from "@/components/dashboard/goal-tracker";
+import { SavingsPlans } from "@/components/dashboard/savings-plans";
+import { GamificationCard } from "@/components/dashboard/gamification-card";
+import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 
 export const dynamic = "force-dynamic";
 
@@ -120,31 +128,53 @@ export default async function AccountPage() {
     circle_wallet_id: null,
     wallet_blockchain: "ARC-TESTNET",
     preferred_stablecoin: "USDC",
+    xp: 0,
+    level: 1,
+    streak_weeks: 0,
+    badges: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
-  // Circles the member created + circles they joined (via membership rows).
-  const [{ data: createdCircles }, { data: memberships }, { data: goals }] =
-    await Promise.all([
-      supabase
-        .from("circles")
-        .select("*")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false })
-        .returns<Circle[]>(),
-      supabase
-        .from("circle_members")
-        .select("circle_id, role")
-        .eq("user_id", user.id)
-        .returns<Pick<CircleMember, "circle_id" | "role">[]>(),
-      supabase
-        .from("savings_goals")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .returns<SavingsGoal[]>(),
-    ]);
+  // Circles the member created + circles they joined (via membership rows),
+  // plus personal goals, savings plans and challenges.
+  const [
+    { data: createdCircles },
+    { data: memberships },
+    { data: goals },
+    { data: plans },
+    { data: challenges },
+  ] = await Promise.all([
+    supabase
+      .from("circles")
+      .select("*")
+      .eq("created_by", user.id)
+      .order("created_at", { ascending: false })
+      .returns<Circle[]>(),
+    supabase
+      .from("circle_members")
+      .select("circle_id, role")
+      .eq("user_id", user.id)
+      .returns<Pick<CircleMember, "circle_id" | "role">[]>(),
+    supabase
+      .from("savings_goals")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .returns<SavingsGoal[]>(),
+    supabase
+      .from("savings_plans")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .returns<SavingsPlan[]>(),
+    supabase
+      .from("challenges")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .returns<Challenge[]>(),
+  ]);
 
   const membershipRows = memberships ?? [];
   const joinedIds = membershipRows.map((m) => m.circle_id);
@@ -175,9 +205,17 @@ export default async function AccountPage() {
   ];
 
   const activeCount = myCircles.filter((c) => c.status === "active").length;
-  const lockedSavings = myCircles
-    .filter((c) => c.status !== "completed")
-    .reduce((s, c) => s + c.contribution_amount, 0);
+
+  const allPlans = plans ?? [];
+  const allChallenges = challenges ?? [];
+  // Principal committed across active SafeLock / target / auto vault plans.
+  const vaultLocked = allPlans
+    .filter((p) => p.status === "active")
+    .reduce((s, p) => s + p.principal, 0);
+
+  const onChainEnabled =
+    isCircleConfigured() &&
+    Boolean(safeProfile.arc_wallet_address && safeProfile.circle_wallet_id);
 
   // Public marketplace: public circles the member didn't create.
   const { data: publicCircles } = await supabase
@@ -314,6 +352,79 @@ export default async function AccountPage() {
           </Card>
         </section>
 
+        {/* Smart savings: SafeLock vaults + gamification */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Vault className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">SafeLock &amp; auto-save</CardTitle>
+                  <CardDescription>
+                    Lock funds for a yield bonus or automate recurring savings.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <SavingsPlans plans={allPlans} onChainEnabled={onChainEnabled} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Gamepad2 className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Rewards &amp; streaks</CardTitle>
+                  <CardDescription>
+                    Earn XP, level up, and unlock badges as you save.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <GamificationCard
+                userId={user.id}
+                xp={safeProfile.xp ?? 0}
+                streakWeeks={Math.max(
+                  safeProfile.streak_weeks ?? 0,
+                  snapshot.streakWeeks
+                )}
+                badges={safeProfile.badges ?? []}
+                challenges={allChallenges}
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* AI Financial Planner */}
+        <section>
+          <Card className="border-primary/30 bg-gradient-to-br from-card to-primary/5">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Wand2 className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">AI financial planner</CardTitle>
+                  <CardDescription>
+                    Tell us your numbers and get a personalised savings plan and
+                    timeline.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <FinancialPlanner currency={safeProfile.preferred_stablecoin} />
+            </CardContent>
+          </Card>
+        </section>
+
         {/* 3. Community Circles marketplace */}
         <section>
           <Card>
@@ -399,11 +510,11 @@ export default async function AccountPage() {
                 <div className="rounded-xl bg-secondary/40 px-4 py-3">
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Lock className="h-3.5 w-3.5 text-primary" />
-                    Locked savings
+                    Locked in vaults
                   </p>
-                  <p className="mt-1 text-2xl font-bold">{fmt(lockedSavings)}</p>
+                  <p className="mt-1 text-2xl font-bold">{fmt(vaultLocked)}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Committed per round
+                    Across SafeLock plans
                   </p>
                 </div>
               </div>

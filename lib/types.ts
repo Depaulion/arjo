@@ -10,6 +10,11 @@ export type Profile = {
   circle_wallet_id: string | null;
   wallet_blockchain: string;
   preferred_stablecoin: ArcStablecoin;
+  /** Gamification counters (migration 0005). */
+  xp: number;
+  level: number;
+  streak_weeks: number;
+  badges: string[];
   created_at: string;
   updated_at: string;
 };
@@ -56,6 +61,74 @@ export type SavingsGoal = {
   target_amount: number;
   currency: ArcStablecoin;
   target_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// --- Phase B: savings plans, ledger, challenges, gamification ---
+
+export type SavingsPlanType = "flex" | "locked" | "target" | "auto";
+export type SavingsPlanStatus = "active" | "matured" | "withdrawn" | "cancelled";
+export type AutoCadence = "daily" | "weekly" | "monthly";
+
+export type SavingsPlan = {
+  id: string;
+  user_id: string;
+  name: string;
+  plan_type: SavingsPlanType;
+  principal: number;
+  currency: ArcStablecoin;
+  lock_until: string | null;
+  auto_cadence: AutoCadence | null;
+  auto_amount: number | null;
+  next_run_at: string | null;
+  target_amount: number | null;
+  apy_bonus: number;
+  status: SavingsPlanStatus;
+  vault_address: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LedgerKind =
+  | "contribution"
+  | "lock"
+  | "withdraw"
+  | "autosave"
+  | "payout"
+  | "penalty"
+  | "bonus";
+export type LedgerStatus = "pending" | "confirmed" | "failed";
+
+export type LedgerEntry = {
+  id: string;
+  user_id: string;
+  kind: LedgerKind;
+  amount: number;
+  currency: ArcStablecoin;
+  circle_id: string | null;
+  plan_id: string | null;
+  tx_hash: string | null;
+  circle_tx_id: string | null;
+  status: LedgerStatus;
+  destination: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChallengeStatus = "active" | "completed" | "failed" | "abandoned";
+
+export type Challenge = {
+  id: string;
+  user_id: string;
+  title: string;
+  target_amount: number;
+  currency: ArcStablecoin;
+  start_date: string;
+  end_date: string;
+  status: ChallengeStatus;
+  reward_xp: number;
   created_at: string;
   updated_at: string;
 };

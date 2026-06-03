@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CIRCLE_FREQUENCIES, type Circle } from "@/lib/types";
 import type { AnalysisMember } from "@/lib/circle-analysis";
 import { CircleInsights } from "@/components/circles/circle-insights";
+import { ContributeButton } from "@/components/circles/contribute-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -187,6 +188,15 @@ export default async function CircleDashboardPage({
             {data.rpcOk ? "Live · Arc Testnet" : "Arc Testnet"}
           </Badge>
         </div>
+
+        {/* Contribute to the pot (only for real circles, not raw-address views) */}
+        {!isEvmAddress(params.id) && (
+          <ContributeButton
+            circleId={params.id}
+            defaultAmount={data.contributionAmount}
+            currency={data.currency}
+          />
+        )}
 
         {/* Not configured / RPC error banners */}
         {!data.configured && (
