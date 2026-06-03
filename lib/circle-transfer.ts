@@ -1,5 +1,7 @@
 import "server-only";
 
+import { TokenBlockchain } from "@circle-fin/developer-controlled-wallets";
+
 import { getCircleClient, isCircleConfigured } from "@/lib/circle";
 import { ARC_USDC_ADDRESS } from "@/lib/arc";
 
@@ -59,20 +61,29 @@ export async function sendUsdc(
   }
 
   const client = getCircleClient();
-  // With a walletId the originating chain is inferred from the wallet, so we
-  // identify the token by its address only (passing `blockchain` here would
-  // collide with the wallet-id input variant's `blockchain?: never`).
-  const res = await client.createTransaction({
+  // Identify USDC by its ERC-20 precompile address + blockchain.
+  //
+  // NOTE: the SDK's `CreateTransferTransactionInput` type is stale and disagrees
+  // with the live API on two points (both verified against Arc Testnet):
+  //   1. the amount field must be `amounts` (plural) — the type says `amount`;
+  //   2. `blockchain` is required alongside `tokenAddress` — the type marks it
+  //      `never` when `walletId` is supplied.
+  // We therefore build the runtime-correct body and cast past the bad types.
+  const body = {
     walletId: params.fromWalletId,
     tokenAddress: ARC_USDC_ADDRESS,
+    blockchain: TokenBlockchain.ArcTestnet,
     destinationAddress: params.toAddress,
-    amount: [toAmountString(params.amount)],
+    amounts: [toAmountString(params.amount)],
     fee: { type: "level", config: { feeLevel: "MEDIUM" } },
     ...(params.idempotencyKey
       ? { idempotencyKey: params.idempotencyKey }
       : {}),
     ...(params.refId ? { refId: params.refId } : {}),
-  });
+  };
+  const res = await client.createTransaction(
+    body as unknown as Parameters<typeof client.createTransaction>[0]
+  );
 
   const data = res.data as
     | { id?: string; state?: string; txHash?: string }
