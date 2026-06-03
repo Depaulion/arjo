@@ -1,11 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Coins, LogOut, Plus, Users } from "lucide-react";
+import {
+  Award,
+  Brain,
+  Coins,
+  Compass,
+  Flame,
+  Lock,
+  LogOut,
+  PiggyBank,
+  Plus,
+  ShieldCheck,
+  Target,
+  Users,
+  Wallet,
+} from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
-import { getUsdcBalance } from "@/lib/arc-onchain";
-import { CIRCLE_FREQUENCIES, type Circle, type Profile } from "@/lib/types";
+import { getDashboardSnapshot } from "@/lib/dashboard";
+import {
+  type Circle,
+  type CircleMember,
+  type CircleRole,
+  type Profile,
+  type SavingsGoal,
+} from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +38,62 @@ import {
 import { ProfileForm } from "@/components/auth/profile-form";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
+import { SavingsCoachCard } from "@/components/dashboard/savings-coach-card";
+import {
+  Marketplace,
+  type MarketplaceCircle,
+} from "@/components/dashboard/marketplace";
+import {
+  CircleHealth,
+  type HealthCircle,
+} from "@/components/dashboard/circle-health";
+import { GoalTracker } from "@/components/dashboard/goal-tracker";
 
 export const dynamic = "force-dynamic";
+
+function fmt(n: number) {
+  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+function StatTile({
+  label,
+  value,
+  unit,
+  sub,
+  icon,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  sub?: string;
+  icon: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <Card
+      className={
+        accent ? "border-primary/30 bg-gradient-to-br from-card to-primary/10" : ""
+      }
+    >
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="text-primary">{icon}</span>
+        </div>
+        <p className="mt-2 text-3xl font-bold">
+          {value}
+          {unit && (
+            <span className="ml-1 text-base font-medium text-muted-foreground">
+              {unit}
+            </span>
+          )}
+        </p>
+        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default async function AccountPage() {
   const supabase = createClient();
@@ -37,7 +111,6 @@ export default async function AccountPage() {
     .eq("id", user.id)
     .single<Profile>();
 
-  // Fallback in case the signup trigger hasn't populated the row yet.
   const safeProfile: Profile = profile ?? {
     id: user.id,
     email: user.email ?? null,
@@ -51,29 +124,88 @@ export default async function AccountPage() {
     updated_at: new Date().toISOString(),
   };
 
-  const { data: circles } = await supabase
-    .from("circles")
-    .select("*")
-    .eq("created_by", user.id)
-    .order("created_at", { ascending: false })
-    .returns<Circle[]>();
+  // Circles the member created + circles they joined (via membership rows).
+  const [{ data: createdCircles }, { data: memberships }, { data: goals }] =
+    await Promise.all([
+      supabase
+        .from("circles")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false })
+        .returns<Circle[]>(),
+      supabase
+        .from("circle_members")
+        .select("circle_id, role")
+        .eq("user_id", user.id)
+        .returns<Pick<CircleMember, "circle_id" | "role">[]>(),
+      supabase
+        .from("savings_goals")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .returns<SavingsGoal[]>(),
+    ]);
 
-  const frequencyLabel = (value: Circle["frequency"]) =>
-    CIRCLE_FREQUENCIES.find((f) => f.value === value)?.label ?? value;
+  const membershipRows = memberships ?? [];
+  const joinedIds = membershipRows.map((m) => m.circle_id);
+  const roleByCircle = new Map<string, CircleRole>(
+    membershipRows.map((m) => [m.circle_id, m.role])
+  );
 
-  // Live on-chain USDC balance (reflects funds claimed from the Circle faucet).
-  let walletBalance: number | null = null;
-  if (safeProfile.arc_wallet_address) {
-    try {
-      walletBalance = await getUsdcBalance(safeProfile.arc_wallet_address);
-    } catch {
-      walletBalance = null;
-    }
+  // Fetch circles joined that the member didn't create (RLS lets members read
+  // circles they belong to).
+  const createdIds = new Set((createdCircles ?? []).map((c) => c.id));
+  const joinedOnlyIds = joinedIds.filter((id) => !createdIds.has(id));
+  let joinedCircles: Circle[] = [];
+  if (joinedOnlyIds.length > 0) {
+    const { data } = await supabase
+      .from("circles")
+      .select("*")
+      .in("id", joinedOnlyIds)
+      .returns<Circle[]>();
+    joinedCircles = data ?? [];
   }
 
+  const myCircles: HealthCircle[] = [
+    ...(createdCircles ?? []).map((c) => ({ ...c, role: "creator" as const })),
+    ...joinedCircles.map((c) => ({
+      ...c,
+      role: roleByCircle.get(c.id) ?? ("member" as const),
+    })),
+  ];
+
+  const activeCount = myCircles.filter((c) => c.status === "active").length;
+  const lockedSavings = myCircles
+    .filter((c) => c.status !== "completed")
+    .reduce((s, c) => s + c.contribution_amount, 0);
+
+  // Public marketplace: public circles the member didn't create.
+  const { data: publicCircles } = await supabase
+    .from("circles")
+    .select("*")
+    .eq("is_public", true)
+    .neq("created_by", user.id)
+    .order("created_at", { ascending: false })
+    .limit(8)
+    .returns<Circle[]>();
+
+  const marketplaceCircles: MarketplaceCircle[] = (publicCircles ?? []).map(
+    (c) => ({ ...c, creatorName: null })
+  );
+
+  // Single on-chain scan powers the overview, coach and analytics.
+  const snapshot = await getDashboardSnapshot({
+    walletAddress: safeProfile.arc_wallet_address,
+    activeCircles: myCircles.length,
+    goalCount: (goals ?? []).length,
+  });
+
+  const totalSaved =
+    snapshot.walletBalance === null ? null : snapshot.walletBalance;
+
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur">
+    <div className="dark min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -81,162 +213,229 @@ export default async function AccountPage() {
             </span>
             Arc<span className="text-primary">Ajo</span>
           </Link>
-          <form action="/auth/signout" method="post">
-            <Button type="submit" variant="outline" size="sm">
-              <LogOut className="h-4 w-4" />
-              Sign out
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/circles/new">
+                <Plus className="h-4 w-4" />
+                New circle
+              </Link>
             </Button>
-          </form>
+            <form action="/auth/signout" method="post">
+              <Button type="submit" variant="ghost" size="sm">
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </form>
+          </div>
         </div>
       </header>
 
-      <main className="container max-w-3xl space-y-6 py-12">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your profile</h1>
-          <p className="mt-1 text-muted-foreground">
-            Manage how you save and where your payouts settle on Arc.
-          </p>
+      <main className="container max-w-6xl space-y-8 py-10">
+        {/* Greeting */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back
+              {safeProfile.full_name ? `, ${safeProfile.full_name}` : ""}
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              Your social savings dashboard on {ARC_TESTNET.name}.
+            </p>
+          </div>
+          <Badge variant={snapshot.rpcOk ? "accent" : "outline"}>
+            {snapshot.rpcOk ? "Live · Arc Testnet" : "Arc Testnet"}
+          </Badge>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <CardTitle>Your Arc wallet</CardTitle>
-                <CardDescription>
-                  A Circle programmable wallet, created for you on{" "}
-                  {safeProfile.wallet_blockchain}.
-                </CardDescription>
+        {/* 1. Savings Overview */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            label="Total saved"
+            value={totalSaved === null ? "—" : fmt(totalSaved)}
+            unit={totalSaved === null ? undefined : "USDC"}
+            sub="On-chain wallet balance"
+            icon={<PiggyBank className="h-4 w-4" />}
+            accent
+          />
+          <StatTile
+            label="Contribution streak"
+            value={String(snapshot.streakWeeks)}
+            unit={snapshot.streakWeeks === 1 ? "week" : "weeks"}
+            sub={
+              snapshot.lastContributionAt
+                ? "Keep it going this week"
+                : "Make your first contribution"
+            }
+            icon={<Flame className="h-4 w-4" />}
+          />
+          <StatTile
+            label="Active circles"
+            value={String(myCircles.length)}
+            sub={`${activeCount} active · ${
+              myCircles.length - activeCount
+            } forming`}
+            icon={<Users className="h-4 w-4" />}
+          />
+          <StatTile
+            label="Reputation"
+            value={String(snapshot.reputationScore)}
+            unit="/100"
+            sub={snapshot.reputationLabel}
+            icon={<Award className="h-4 w-4" />}
+          />
+        </section>
+
+        {/* 2 + 4. Coach and Circle Health side by side */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <SavingsCoachCard
+            coach={snapshot.coach}
+            currency={safeProfile.preferred_stablecoin}
+          />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Circle health analytics</CardTitle>
+                  <CardDescription>
+                    Consistency, stability and per-circle insights.
+                  </CardDescription>
+                </div>
               </div>
-              <Badge variant="accent">{safeProfile.preferred_stablecoin}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {safeProfile.arc_wallet_address ? (
-              <WalletPanel
-                address={safeProfile.arc_wallet_address}
-                balance={walletBalance}
-                explorerUrl={arcAddressUrl(safeProfile.arc_wallet_address)}
+            </CardHeader>
+            <CardContent>
+              <CircleHealth
+                circles={myCircles}
+                consistency={snapshot.coach.factors.consistency}
               />
-            ) : (
-              <WalletProvisioner />
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <CardTitle>Your circles</CardTitle>
-                <CardDescription>
-                  Savings groups you&apos;ve created.
-                </CardDescription>
+        {/* 3. Community Circles marketplace */}
+        <section>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Compass className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Community circles</CardTitle>
+                  <CardDescription>
+                    Discover public savings circles and join one.
+                  </CardDescription>
+                </div>
               </div>
-              <Button size="sm" asChild>
-                <Link href="/circles/new">
-                  <Plus className="h-4 w-4" />
-                  New circle
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {circles && circles.length > 0 ? (
-              <ul className="divide-y divide-border">
-                {circles.map((circle) => (
-                  <li key={circle.id} className="first:pt-0 last:pb-0">
-                    <Link
-                      href={`/circles/${circle.id}`}
-                      className="-mx-3 flex items-center justify-between gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-secondary/50"
-                    >
-                      <div>
-                        <p className="font-medium">{circle.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {circle.contribution_amount.toLocaleString()}{" "}
-                          {circle.currency} · {frequencyLabel(circle.frequency)}{" "}
-                          ·{" "}
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="h-3.5 w-3.5" />
-                            {circle.member_count}
-                          </span>
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          circle.status === "active" ? "default" : "outline"
-                        }
-                      >
-                        {circle.status}
-                      </Badge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No circles yet. Start your first Ajo savings group.
-                </p>
-                <Button size="sm" className="mt-4" asChild>
-                  <Link href="/circles/new">
-                    <Plus className="h-4 w-4" />
-                    Create a circle
-                  </Link>
-                </Button>
+            </CardHeader>
+            <CardContent>
+              <Marketplace
+                circles={marketplaceCircles}
+                joinedIds={joinedIds}
+                userId={user.id}
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* 5 + 6. Goals and Arc economy */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Target className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Goal tracking</CardTitle>
+                  <CardDescription>
+                    Set targets and watch your progress and finish date.
+                  </CardDescription>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <GoalTracker
+                userId={user.id}
+                goals={goals ?? []}
+                balance={snapshot.walletBalance ?? 0}
+                weeklyRate={snapshot.coach.weeklyProjection}
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account details</CardTitle>
-            <CardDescription>
-              Update your name, Arc wallet, and preferred stablecoin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProfileForm profile={safeProfile} />
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                    <Wallet className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <CardTitle className="text-lg">Arc Testnet economy</CardTitle>
+                    <CardDescription>
+                      Your programmable wallet on {safeProfile.wallet_blockchain}.
+                    </CardDescription>
+                  </div>
+                </div>
+                <Badge variant="accent">{safeProfile.preferred_stablecoin}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-secondary/40 px-4 py-3">
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Coins className="h-3.5 w-3.5 text-primary" />
+                    Test USDC balance
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {snapshot.walletBalance === null
+                      ? "—"
+                      : fmt(snapshot.walletBalance)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-secondary/40 px-4 py-3">
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5 text-primary" />
+                    Locked savings
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">{fmt(lockedSavings)}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Committed per round
+                  </p>
+                </div>
+              </div>
 
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Arc network</CardTitle>
-              <Badge variant="accent">Testnet</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <p className="text-muted-foreground">Network</p>
-              <p className="font-medium">{ARC_TESTNET.name}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Chain ID</p>
-              <p className="font-medium">{ARC_TESTNET.chainId}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Gas token</p>
-              <p className="font-medium">
-                {ARC_TESTNET.nativeCurrency.symbol} (
-                {ARC_TESTNET.nativeCurrency.decimals} decimals)
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Explorer</p>
-              <a
-                href={ARC_TESTNET.explorerUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-primary hover:underline"
-              >
-                {ARC_TESTNET.explorerUrl.replace("https://", "")}
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+              {safeProfile.arc_wallet_address ? (
+                <WalletPanel
+                  address={safeProfile.arc_wallet_address}
+                  balance={snapshot.walletBalance}
+                  explorerUrl={arcAddressUrl(safeProfile.arc_wallet_address)}
+                  currency={safeProfile.preferred_stablecoin}
+                />
+              ) : (
+                <WalletProvisioner />
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Account settings */}
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Account settings</CardTitle>
+              <CardDescription>
+                Update your name, Arc wallet, and preferred stablecoin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileForm profile={safeProfile} />
+            </CardContent>
+          </Card>
+        </section>
       </main>
     </div>
   );

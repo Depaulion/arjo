@@ -33,6 +33,29 @@ export type Circle = {
   frequency: CircleFrequency;
   member_count: number;
   status: CircleStatus;
+  is_public: boolean;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CircleRole = "creator" | "member";
+
+export type CircleMember = {
+  circle_id: string;
+  user_id: string;
+  role: CircleRole;
+  payout_position: number | null;
+  joined_at: string;
+};
+
+export type SavingsGoal = {
+  id: string;
+  user_id: string;
+  name: string;
+  target_amount: number;
+  currency: ArcStablecoin;
+  target_date: string | null;
   created_at: string;
   updated_at: string;
 };

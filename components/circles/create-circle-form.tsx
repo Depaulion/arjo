@@ -23,6 +23,8 @@ export function CreateCircleForm({
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<CircleFrequency>("monthly");
   const [memberCount, setMemberCount] = useState("8");
+  const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +56,8 @@ export function CreateCircleForm({
       currency,
       frequency,
       member_count: members,
+      description: description.trim() || null,
+      is_public: isPublic,
     });
     setLoading(false);
 
@@ -147,6 +151,39 @@ export function CreateCircleForm({
           />
         </div>
       </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="description" className="text-sm font-medium">
+          Description <span className="text-muted-foreground">(optional)</span>
+        </label>
+        <textarea
+          id="description"
+          rows={2}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="A monthly circle for early-stage founders saving toward runway."
+          className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      <label
+        htmlFor="isPublic"
+        className="flex cursor-pointer items-start gap-3 rounded-xl border border-input bg-background px-4 py-3"
+      >
+        <input
+          id="isPublic"
+          type="checkbox"
+          checked={isPublic}
+          onChange={(e) => setIsPublic(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-input"
+        />
+        <span className="text-sm">
+          <span className="font-medium">List in the community marketplace</span>
+          <span className="block text-xs text-muted-foreground">
+            Anyone can discover and join this circle. Leave off to keep it private.
+          </span>
+        </span>
+      </label>
 
       {pool > 0 && (
         <div className="rounded-xl bg-secondary/60 px-4 py-3 text-sm">
