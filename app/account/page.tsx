@@ -9,9 +9,6 @@ import {
   Gamepad2,
   History,
   Lock,
-  LogOut,
-  PiggyBank,
-  Plus,
   ShieldCheck,
   Target,
   Users,
@@ -39,7 +36,6 @@ import {
   type SavingsPlan,
 } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -67,6 +63,7 @@ import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import {
   SavingsCharts,
   type ActivityBar,
@@ -283,15 +280,16 @@ export default async function AccountPage() {
     goalCount: (goals ?? []).length,
   });
 
-  const totalSaved =
+  // Liquid, spendable USDC sitting in the user's wallet right now.
+  const availableBalance =
     snapshot.walletBalance === null ? null : snapshot.walletBalance;
 
   // --- Analytics chart data (derived, no extra queries) ---
   // Donut: held assets split between the liquid wallet and locked vaults.
   const allocation: AllocationSlice[] = [
     {
-      label: "Liquid wallet",
-      value: totalSaved ?? 0,
+      label: "Available",
+      value: availableBalance ?? 0,
       color: "hsl(var(--primary))",
     },
     {
@@ -331,20 +329,7 @@ export default async function AccountPage() {
             </span>
             Arc<span className="text-primary">Ajo</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/circles/new">
-                <Plus className="h-4 w-4" />
-                New circle
-              </Link>
-            </Button>
-            <form action="/auth/signout" method="post">
-              <Button type="submit" variant="ghost" size="sm">
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </Button>
-            </form>
-          </div>
+          <DashboardNav />
         </div>
       </header>
 
@@ -383,11 +368,11 @@ export default async function AccountPage() {
           className="grid scroll-mt-24 gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <StatTile
-            label="Total saved"
-            value={totalSaved === null ? "—" : fmt(totalSaved)}
-            unit={totalSaved === null ? undefined : "USDC"}
-            sub="On-chain wallet balance"
-            icon={<PiggyBank className="h-4 w-4" />}
+            label="Available balance"
+            value={availableBalance === null ? "—" : fmt(availableBalance)}
+            unit={availableBalance === null ? undefined : "USDC"}
+            sub="Liquid USDC in your wallet"
+            icon={<Wallet className="h-4 w-4" />}
             accent
           />
           <StatTile

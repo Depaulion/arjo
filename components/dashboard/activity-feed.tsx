@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownLeft,
@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   Coins,
+  ExternalLink,
   Gift,
   Loader2,
   Lock,
@@ -23,12 +24,25 @@ function fmt(n: number) {
   return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-US", {
+function timeOnly(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/** Group label for a calendar day: Today / Yesterday / "Mon, Jun 2". */
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const startOf = (x: Date) =>
+    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOf(new Date()) - startOf(d)) / 86_400_000);
+  if (diff <= 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
@@ -36,13 +50,41 @@ const KIND_META: Record<
   LedgerKind,
   { label: string; icon: React.ReactNode; outgoing: boolean }
 > = {
-  contribution: { label: "Contribution", icon: <ArrowUpRight className="h-4 w-4" />, outgoing: true },
-  lock: { label: "SafeLock deposit", icon: <Lock className="h-4 w-4" />, outgoing: true },
-  autosave: { label: "Auto-save", icon: <Repeat className="h-4 w-4" />, outgoing: true },
-  withdraw: { label: "Withdrawal", icon: <ArrowDownLeft className="h-4 w-4" />, outgoing: false },
-  payout: { label: "Payout", icon: <ArrowDownLeft className="h-4 w-4" />, outgoing: false },
-  penalty: { label: "Penalty", icon: <TriangleAlert className="h-4 w-4" />, outgoing: true },
-  bonus: { label: "Yield bonus", icon: <Gift className="h-4 w-4" />, outgoing: false },
+  contribution: {
+    label: "Contribution",
+    icon: <ArrowUpRight className="h-4 w-4" />,
+    outgoing: true,
+  },
+  lock: {
+    label: "SafeLock deposit",
+    icon: <Lock className="h-4 w-4" />,
+    outgoing: true,
+  },
+  autosave: {
+    label: "Auto-save",
+    icon: <Repeat className="h-4 w-4" />,
+    outgoing: true,
+  },
+  withdraw: {
+    label: "Withdrawal",
+    icon: <ArrowDownLeft className="h-4 w-4" />,
+    outgoing: false,
+  },
+  payout: {
+    label: "Payout",
+    icon: <ArrowDownLeft className="h-4 w-4" />,
+    outgoing: false,
+  },
+  penalty: {
+    label: "Penalty",
+    icon: <TriangleAlert className="h-4 w-4" />,
+    outgoing: true,
+  },
+  bonus: {
+    label: "Yield bonus",
+    icon: <Gift className="h-4 w-4" />,
+    outgoing: false,
+  },
 };
 
 const STATUS_META: Record<
@@ -51,18 +93,18 @@ const STATUS_META: Record<
 > = {
   pending: {
     label: "Pending",
-    className: "text-amber-500",
-    icon: <Clock className="h-3.5 w-3.5" />,
+    className: "border-amber-500/30 bg-amber-500/10 text-amber-500",
+    icon: <Clock className="h-3 w-3" />,
   },
   confirmed: {
     label: "Confirmed",
-    className: "text-primary",
-    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+    className: "border-primary/30 bg-primary/10 text-primary",
+    icon: <CheckCircle2 className="h-3 w-3" />,
   },
   failed: {
     label: "Failed",
-    className: "text-destructive",
-    icon: <TriangleAlert className="h-3.5 w-3.5" />,
+    className: "border-destructive/30 bg-destructive/10 text-destructive",
+    icon: <TriangleAlert className="h-3 w-3" />,
   },
 };
 
@@ -77,6 +119,18 @@ export function ActivityFeed({
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Entries arrive newest-first; bucket them into ordered day groups.
+  const groups = useMemo(() => {
+    const map = new Map<string, LedgerEntry[]>();
+    for (const e of entries) {
+      const key = dayLabel(e.created_at);
+      const list = map.get(key);
+      if (list) list.push(e);
+      else map.set(key, [e]);
+    }
+    return Array.from(map.entries());
+  }, [entries]);
 
   async function sync() {
     setSyncing(true);
@@ -97,9 +151,11 @@ export function ActivityFeed({
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border py-8 text-center">
-        <Coins className="mx-auto h-6 w-6 text-muted-foreground" />
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="rounded-xl border border-dashed border-border py-10 text-center">
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-secondary/60">
+          <Coins className="h-5 w-5 text-muted-foreground" />
+        </span>
+        <p className="mx-auto mt-3 max-w-xs text-sm text-muted-foreground">
           No activity yet. Contribute to a circle or open a SafeLock vault and
           your USDC actions will appear here.
         </p>
@@ -108,11 +164,12 @@ export function ActivityFeed({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Summary bar */}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          Every USDC action, settled on Arc Testnet.
-        </p>
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+          {entries.length} {entries.length === 1 ? "action" : "actions"}
+        </span>
         {hasPending && (
           <button
             onClick={sync}
@@ -135,62 +192,75 @@ export function ActivityFeed({
         </p>
       )}
 
-      <ul className="divide-y divide-border">
-        {entries.map((e) => {
-          const meta = KIND_META[e.kind];
-          const status = STATUS_META[e.status];
-          return (
-            <li
-              key={e.id}
-              className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                    meta.outgoing
-                      ? "bg-accent/15 text-accent-foreground"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
-                  {meta.icon}
-                </span>
-                <div>
-                  <p className="text-sm font-medium">{meta.label}</p>
-                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {formatDateTime(e.created_at)}
-                    {e.tx_hash && (
-                      <a
-                        href={arcTxUrl(e.tx_hash)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-mono hover:text-primary hover:underline"
+      {/* Day-grouped timeline */}
+      <div className="space-y-5">
+        {groups.map(([label, rows]) => (
+          <div key={label} className="space-y-1">
+            <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {label}
+            </p>
+            <ul className="overflow-hidden rounded-xl border border-border/60 bg-secondary/20">
+              {rows.map((e) => {
+                const meta = KIND_META[e.kind];
+                const status = STATUS_META[e.status];
+                return (
+                  <li
+                    key={e.id}
+                    className="flex items-center justify-between gap-3 border-b border-border/50 px-3 py-3 last:border-b-0"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                          meta.outgoing
+                            ? "bg-accent/15 text-accent-foreground"
+                            : "bg-primary/10 text-primary"
+                        }`}
                       >
-                        {shortenHex(e.tx_hash)}
-                      </a>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span
-                  className={`text-sm font-semibold ${
-                    meta.outgoing ? "text-foreground" : "text-primary"
-                  }`}
-                >
-                  {meta.outgoing ? "−" : "+"}
-                  {fmt(e.amount)} {e.currency}
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 text-[11px] font-medium ${status.className}`}
-                >
-                  {status.icon}
-                  {status.label}
-                </span>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                        {meta.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {meta.label}
+                        </p>
+                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{timeOnly(e.created_at)}</span>
+                          {e.tx_hash && (
+                            <a
+                              href={arcTxUrl(e.tx_hash)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-mono hover:text-primary hover:underline"
+                            >
+                              {shortenHex(e.tx_hash)}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span
+                        className={`text-sm font-semibold ${
+                          meta.outgoing ? "text-foreground" : "text-primary"
+                        }`}
+                      >
+                        {meta.outgoing ? "−" : "+"}
+                        {fmt(e.amount)} {e.currency}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${status.className}`}
+                      >
+                        {status.icon}
+                        {status.label}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
