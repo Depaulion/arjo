@@ -11,6 +11,7 @@ import {
   Lock,
   ShieldCheck,
   Target,
+  User as UserIcon,
   Users,
   Vault,
   Wallet,
@@ -64,6 +65,10 @@ import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import {
+  NotificationBell,
+  type AppNotification,
+} from "@/components/dashboard/notification-bell";
 import {
   SavingsCharts,
   type ActivityBar,
@@ -319,6 +324,92 @@ export default async function AccountPage() {
     })
     .reverse();
 
+  // Personalised notifications: a welcome greeting plus gentle, state-derived
+  // reminders. Computed here so the bell stays a presentational client widget.
+  const firstName = safeProfile.full_name?.split(" ")[0] ?? null;
+  const notifications: AppNotification[] = [
+    {
+      id: "welcome",
+      title: firstName ? `Welcome back, ${firstName}!` : "Welcome back!",
+      body: "Here's what's happening with your savings today.",
+      icon: "welcome",
+      tone: "welcome",
+    },
+  ];
+
+  if (!safeProfile.arc_wallet_address) {
+    notifications.push({
+      id: "wallet-setup",
+      title: "Finish setting up your wallet",
+      body: "Your Arc Testnet wallet is being provisioned so you can save on-chain.",
+      icon: "wallet",
+      tone: "reminder",
+      href: "#overview",
+    });
+  } else if (!availableBalance) {
+    notifications.push({
+      id: "faucet",
+      title: "Claim free test USDC",
+      body: "Top up your wallet from the faucet to start contributing.",
+      icon: "faucet",
+      tone: "reminder",
+      href: "#overview",
+    });
+  }
+
+  if (snapshot.streakWeeks > 0) {
+    notifications.push({
+      id: "streak",
+      title: `You're on a ${snapshot.streakWeeks}-week streak`,
+      body: "Contribute again this week to keep the momentum going.",
+      icon: "streak",
+      tone: "reminder",
+      href: "#overview",
+    });
+  } else {
+    notifications.push({
+      id: "first-contribution",
+      title: "Make your first contribution",
+      body: "Add to a circle or open a SafeLock vault to begin your streak.",
+      icon: "spark",
+      tone: "reminder",
+      href: "#save",
+    });
+  }
+
+  if (hasPending) {
+    notifications.push({
+      id: "pending",
+      title: "Transactions awaiting settlement",
+      body: "Open Recent activity and tap Sync status to refresh them.",
+      icon: "sync",
+      tone: "reminder",
+      href: "#activity",
+    });
+  }
+
+  if (myCircles.length === 0) {
+    notifications.push({
+      id: "join-circle",
+      title: "Join a savings circle",
+      body: "Explore community circles or start your own to save together.",
+      icon: "members",
+      tone: "info",
+      href: "#community",
+    });
+  } else if (myCircles.length - activeCount > 0) {
+    notifications.push({
+      id: "forming",
+      title: `${myCircles.length - activeCount} circle${
+        myCircles.length - activeCount === 1 ? "" : "s"
+      } still forming`,
+      body: "Invite members so your circle can activate and start payouts.",
+      icon: "members",
+      tone: "info",
+      href: "#overview",
+    });
+  }
+
   return (
     <div className="dark min-h-screen scroll-smooth bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -329,7 +420,27 @@ export default async function AccountPage() {
             </span>
             Arc<span className="text-primary">Ajo</span>
           </Link>
-          <DashboardNav />
+          <div className="flex items-center gap-2">
+            {/* Profile avatar — links to account settings to change the photo. */}
+            <Link
+              href="#settings"
+              aria-label="Profile"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-secondary/60 text-muted-foreground transition-colors hover:border-primary/40"
+            >
+              {safeProfile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={safeProfile.avatar_url}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <UserIcon className="h-4 w-4" />
+              )}
+            </Link>
+            <NotificationBell notifications={notifications} />
+            <DashboardNav />
+          </div>
         </div>
       </header>
 
@@ -662,7 +773,7 @@ export default async function AccountPage() {
         </section>
 
         {/* Account settings */}
-        <section>
+        <section id="settings" className="scroll-mt-24">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Account settings</CardTitle>
