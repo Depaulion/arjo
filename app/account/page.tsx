@@ -61,6 +61,7 @@ import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { BottomNav } from "@/components/dashboard/bottom-nav";
 import {
   SavingsCharts,
   type ActivityBar,
@@ -300,7 +301,7 @@ export default async function AccountPage() {
     .reverse();
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="dark min-h-screen scroll-smooth bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
@@ -326,7 +327,7 @@ export default async function AccountPage() {
         </div>
       </header>
 
-      <main className="container max-w-6xl space-y-8 py-10">
+      <main className="container max-w-6xl space-y-8 py-10 pb-28">
         {/* Greeting */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -353,7 +354,10 @@ export default async function AccountPage() {
         )}
 
         {/* 1. Savings Overview */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section
+          id="overview"
+          className="grid scroll-mt-24 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
           <StatTile
             label="Total saved"
             value={totalSaved === null ? "—" : fmt(totalSaved)}
@@ -391,7 +395,7 @@ export default async function AccountPage() {
         </section>
 
         {/* Analytics: allocation donut + weekly activity bars */}
-        <section>
+        <section id="analytics" className="scroll-mt-24">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -446,7 +450,7 @@ export default async function AccountPage() {
         </section>
 
         {/* Smart savings: SafeLock vaults + gamification */}
-        <section className="grid gap-6 lg:grid-cols-2">
+        <section id="save" className="grid scroll-mt-24 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -519,7 +523,7 @@ export default async function AccountPage() {
         </section>
 
         {/* On-chain activity feed */}
-        <section>
+        <section id="activity" className="scroll-mt-24">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -541,7 +545,7 @@ export default async function AccountPage() {
         </section>
 
         {/* 3. Community Circles marketplace */}
-        <section>
+        <section id="community" className="scroll-mt-24">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -663,6 +667,8 @@ export default async function AccountPage() {
           </Card>
         </section>
       </main>
+
+      <BottomNav />
     </div>
   );
 }
