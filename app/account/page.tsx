@@ -21,7 +21,11 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
-import { isCircleConfigured } from "@/lib/circle";
+import {
+  ARC_TESTNET_BLOCKCHAIN,
+  isCircleConfigured,
+  provisionWalletForUser,
+} from "@/lib/circle";
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import {
@@ -146,6 +150,22 @@ export default async function AccountPage() {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  // Fallback auto-provisioning: guarantee every signed-in user has their own
+  // Arc wallet — even if the OAuth-callback attempt failed (Circle slow/down at
+  // sign-in). Idempotent: returns the existing wallet if one already exists, so
+  // this is a no-op on every load after the first. The wallet is what powers
+  // claiming test USDC from the Circle faucet and all on-chain interactions.
+  if (!safeProfile.arc_wallet_address && isCircleConfigured()) {
+    try {
+      const wallet = await provisionWalletForUser(supabase, user.id);
+      safeProfile.arc_wallet_address = wallet.address;
+      safeProfile.circle_wallet_id = wallet.walletId;
+      safeProfile.wallet_blockchain = ARC_TESTNET_BLOCKCHAIN;
+    } catch (err) {
+      console.error("[account] fallback wallet provisioning failed:", err);
+    }
+  }
 
   // Circles the member created + circles they joined (via membership rows),
   // plus personal goals, savings plans and challenges.
