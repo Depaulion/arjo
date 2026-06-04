@@ -45,6 +45,7 @@ import {
 import { ProfileForm } from "@/components/auth/profile-form";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
+import { ClaimButton } from "@/components/wallet/claim-button";
 import { SavingsCoachCard } from "@/components/dashboard/savings-coach-card";
 import {
   Marketplace,
@@ -300,6 +301,15 @@ export default async function AccountPage() {
             {snapshot.rpcOk ? "Live · Arc Testnet" : "Arc Testnet"}
           </Badge>
         </div>
+
+        {/* Prominent claim CTA — fund the wallet straight from the dashboard. */}
+        {safeProfile.arc_wallet_address && (
+          <ClaimButton
+            address={safeProfile.arc_wallet_address}
+            balance={snapshot.walletBalance}
+            currency={safeProfile.preferred_stablecoin}
+          />
+        )}
 
         {/* 1. Savings Overview */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
