@@ -106,6 +106,17 @@ export async function POST(
 
   const gamification = await applyGamification(supabase, user.id, "contribution");
 
+  // Lightweight per-circle reputation: +5 for contributing. Best-effort — never
+  // let a reputation hiccup fail the contribution.
+  try {
+    await supabase.rpc("bump_my_reputation", {
+      p_circle_id: circle.id,
+      p_delta: 5,
+    });
+  } catch {
+    // ignore
+  }
+
   return NextResponse.json({
     ledgerId: ledger.id,
     amount,

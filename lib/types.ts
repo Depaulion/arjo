@@ -60,6 +60,76 @@ export type CircleMember = {
   joined_at: string;
 };
 
+// --- Circle governance (migration 0007) ---
+
+export type ProposalType =
+  | "PAYOUT_ORDER_CHANGE"
+  | "MEMBER_EXIT_REQUEST"
+  | "MEMBER_REMOVAL"
+  | "RULE_CHANGE";
+
+export type ProposalStatus =
+  | "OPEN"
+  | "APPROVED"
+  | "REJECTED"
+  | "EXECUTED"
+  | "CANCELLED";
+
+export type Proposal = {
+  id: string;
+  circle_id: string;
+  created_by: string;
+  type: ProposalType;
+  title: string;
+  description: string | null;
+  /** Structured execution data, e.g. { order: [user_id, ...] }. */
+  payload: Record<string, unknown>;
+  /** Member targeted by an exit/removal proposal. */
+  target_user_id: string | null;
+  status: ProposalStatus;
+  /** Percent of all members that must vote YES to approve. */
+  threshold_pct: number;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+};
+
+export type VoteChoice = "YES" | "NO";
+
+export type ProposalVote = {
+  proposal_id: string;
+  user_id: string;
+  choice: VoteChoice;
+  created_at: string;
+};
+
+export const PROPOSAL_TYPES: {
+  value: ProposalType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "PAYOUT_ORDER_CHANGE",
+    label: "Change payout order",
+    description: "Reorder who receives the pooled payout, and when.",
+  },
+  {
+    value: "MEMBER_EXIT_REQUEST",
+    label: "Request to exit",
+    description: "Ask the circle to approve a member leaving.",
+  },
+  {
+    value: "MEMBER_REMOVAL",
+    label: "Remove a member",
+    description: "Vote a member out of the circle.",
+  },
+  {
+    value: "RULE_CHANGE",
+    label: "Change a rule",
+    description: "Record a collective decision about how the circle runs.",
+  },
+];
+
 export type SavingsGoal = {
   id: string;
   user_id: string;
