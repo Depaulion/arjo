@@ -48,9 +48,9 @@ import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
 import { ClaimButton } from "@/components/wallet/claim-button";
 import { SavingsCoachCard } from "@/components/dashboard/savings-coach-card";
 import {
-  Marketplace,
+  CommunitySavings,
   type MarketplaceCircle,
-} from "@/components/dashboard/marketplace";
+} from "@/components/dashboard/community-savings";
 import {
   CircleHealth,
   type HealthCircle,
@@ -482,7 +482,7 @@ export default async function AccountPage() {
                   <Compass className="h-5 w-5" />
                 </span>
                 <div>
-                  <CardTitle className="text-lg">Community circles</CardTitle>
+                  <CardTitle className="text-lg">Community savings</CardTitle>
                   <CardDescription>
                     Discover public savings circles and join one.
                   </CardDescription>
@@ -490,7 +490,7 @@ export default async function AccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <Marketplace
+              <CommunitySavings
                 circles={marketplaceCircles}
                 joinedIds={joinedIds}
                 userId={user.id}
