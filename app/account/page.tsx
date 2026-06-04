@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Award,
+  BarChart3,
   Coins,
   Compass,
   Flame,
@@ -60,6 +61,11 @@ import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import {
+  SavingsCharts,
+  type ActivityBar,
+  type AllocationSlice,
+} from "@/components/dashboard/savings-charts";
 
 export const dynamic = "force-dynamic";
 
@@ -258,6 +264,41 @@ export default async function AccountPage() {
   const totalSaved =
     snapshot.walletBalance === null ? null : snapshot.walletBalance;
 
+  // --- Analytics chart data (derived, no extra queries) ---
+  // Donut: held assets split between the liquid wallet and locked vaults.
+  const allocation: AllocationSlice[] = [
+    {
+      label: "Liquid wallet",
+      value: totalSaved ?? 0,
+      color: "hsl(var(--primary))",
+    },
+    {
+      label: "Locked in vaults",
+      value: vaultLocked,
+      color: "hsl(var(--accent))",
+    },
+  ];
+
+  // Bars: net savings inflow per week over the last 8 weeks, from the ledger.
+  const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
+  const nowMs = Date.now();
+  const inflowKinds = new Set(["contribution", "lock", "autosave", "bonus"]);
+  const weekBuckets = Array.from({ length: 8 }, () => 0);
+  for (const e of ledgerEntries) {
+    if (e.status === "failed" || !inflowKinds.has(e.kind)) continue;
+    const k = Math.floor((nowMs - new Date(e.created_at).getTime()) / MS_WEEK);
+    if (k >= 0 && k < 8) weekBuckets[k] += e.amount;
+  }
+  const activity: ActivityBar[] = weekBuckets
+    .map((value, k) => {
+      const d = new Date(nowMs - k * MS_WEEK);
+      return {
+        label: `${d.getMonth() + 1}/${d.getDate()}`,
+        value: Math.round(value * 100) / 100,
+      };
+    })
+    .reverse();
+
   return (
     <div className="dark min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -347,6 +388,32 @@ export default async function AccountPage() {
             sub={snapshot.reputationLabel}
             icon={<Award className="h-4 w-4" />}
           />
+        </section>
+
+        {/* Analytics: allocation donut + weekly activity bars */}
+        <section>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <BarChart3 className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Savings analytics</CardTitle>
+                  <CardDescription>
+                    How your funds are allocated and your weekly momentum.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <SavingsCharts
+                allocation={allocation}
+                activity={activity}
+                currency={safeProfile.preferred_stablecoin}
+              />
+            </CardContent>
+          </Card>
         </section>
 
         {/* 2 + 4. Coach and Circle Health side by side */}
