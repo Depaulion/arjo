@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 
+import { ARC_TESTNET } from "@/lib/arc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -29,10 +30,12 @@ export function Hero() {
           </h1>
 
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Arc Ajo brings the trusted Yoruba <em>Ajo</em> savings circle
-            on-chain. Pool funds with people you trust, automate every payout,
-            and grow your money in stablecoins — transparent, borderless, and
-            free from middlemen.
+            Arc Ajo brings the age-old rotating savings circle on-chain — known
+            as <em>Ajo</em> among the Yoruba, and as <em>esusu</em>,{" "}
+            <em>tontine</em>, <em>susu</em>, and <em>chama</em> the world over.
+            Pool funds with people you trust, automate every payout, and grow
+            your money in stablecoins — transparent, borderless, and free from
+            middlemen.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -55,6 +58,10 @@ export function Hero() {
             <span className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               Earn yield while you save
+            </span>
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-accent" />
+              Live on {ARC_TESTNET.name}
             </span>
           </div>
         </div>
