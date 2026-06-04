@@ -51,6 +51,7 @@ import { ProfileForm } from "@/components/auth/profile-form";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
 import { ClaimButton } from "@/components/wallet/claim-button";
+import { WalletSetupBanner } from "@/components/wallet/wallet-setup-banner";
 import { SavingsCoachCard } from "@/components/dashboard/savings-coach-card";
 import {
   CommunitySavings,
@@ -364,13 +365,16 @@ export default async function AccountPage() {
           </Badge>
         </div>
 
-        {/* Prominent claim CTA — fund the wallet straight from the dashboard. */}
-        {safeProfile.arc_wallet_address && (
+        {/* Prominent claim CTA when the wallet is ready; otherwise a setup
+            notice so the user knows their wallet is provisioning / can retry. */}
+        {safeProfile.arc_wallet_address ? (
           <ClaimButton
             address={safeProfile.arc_wallet_address}
             balance={snapshot.walletBalance}
             currency={safeProfile.preferred_stablecoin}
           />
+        ) : (
+          <WalletSetupBanner configured={isCircleConfigured()} />
         )}
 
         {/* 1. Savings Overview */}
