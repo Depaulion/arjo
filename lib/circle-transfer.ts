@@ -1,6 +1,6 @@
 import "server-only";
 
-import { TokenBlockchain } from "@circle-fin/developer-controlled-wallets";
+import { Blockchain } from "@circle-fin/developer-controlled-wallets";
 
 import { getCircleClient, isCircleConfigured } from "@/lib/circle";
 import { ARC_USDC_ADDRESS } from "@/lib/arc";
@@ -69,10 +69,15 @@ export async function sendUsdc(
   //   2. `blockchain` is required alongside `tokenAddress` — the type marks it
   //      `never` when `walletId` is supplied.
   // We therefore build the runtime-correct body and cast past the bad types.
+  //
+  // IMPORTANT: use `Blockchain` (a real runtime enum), NOT `TokenBlockchain`,
+  // which the SDK declares only as a TS type — at runtime it is `undefined`, so
+  // `TokenBlockchain.ArcTestnet` throws and silently fails every transfer.
+  // `Blockchain.ArcTestnet` === "ARC-TESTNET" at runtime.
   const body = {
     walletId: params.fromWalletId,
     tokenAddress: ARC_USDC_ADDRESS,
-    blockchain: TokenBlockchain.ArcTestnet,
+    blockchain: Blockchain.ArcTestnet,
     destinationAddress: params.toAddress,
     amounts: [toAmountString(params.amount)],
     fee: { type: "level", config: { feeLevel: "MEDIUM" } },
