@@ -17,7 +17,7 @@ const ACTIONS: Action[] = [
   },
   {
     label: "Withdraw",
-    href: "#activity",
+    href: "/account/withdraw",
     icon: <ArrowDownToLine className="h-5 w-5" />,
     tone: "neutral",
   },
