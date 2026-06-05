@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, History, Home, Users, Vault } from "lucide-react";
+import { BarChart3, History, Home, Target, Users, Vault } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "home", label: "Home", icon: Home },
-  { id: "stats", label: "Stats", icon: BarChart3 },
+  { id: "goals", label: "Goals", icon: Target },
   { id: "save", label: "Save", icon: Vault },
+  { id: "stats", label: "Stats", icon: BarChart3 },
   { id: "circles", label: "Circles", icon: Users },
   { id: "activity", label: "Activity", icon: History },
 ] as const;
@@ -28,7 +29,7 @@ const HASH_TO_VIEW: Record<string, View> = {
   community: "circles",
   activity: "activity",
   settings: "settings",
-  goals: "save",
+  goals: "goals",
 };
 
 /**
@@ -38,6 +39,7 @@ const HASH_TO_VIEW: Record<string, View> = {
  */
 export function DashboardTabs({
   home,
+  goals,
   stats,
   save,
   circles,
@@ -45,6 +47,7 @@ export function DashboardTabs({
   settings,
 }: {
   home: React.ReactNode;
+  goals: React.ReactNode;
   stats: React.ReactNode;
   save: React.ReactNode;
   circles: React.ReactNode;
@@ -79,6 +82,7 @@ export function DashboardTabs({
 
   const views: Record<View, React.ReactNode> = {
     home,
+    goals,
     stats,
     save,
     circles,

@@ -8,7 +8,6 @@ import {
   History,
   Lock,
   ShieldCheck,
-  Target,
   User as UserIcon,
   Vault,
   Wallet,
@@ -55,7 +54,7 @@ import {
   CircleHealth,
   type HealthCircle,
 } from "@/components/dashboard/circle-health";
-import { GoalTracker } from "@/components/dashboard/goal-tracker";
+import { GoalsView } from "@/components/dashboard/goals/goals-view";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
@@ -499,6 +498,16 @@ export default async function AccountPage() {
           />
         </section>
         }
+        goals={
+        <section id="goals" className="scroll-mt-24">
+          <GoalsView
+            userId={user.id}
+            goals={goals ?? []}
+            balance={snapshot.walletBalance ?? 0}
+            weeklyRate={snapshot.coach.weeklyProjection}
+          />
+        </section>
+        }
         stats={
         <>
         {/* Analytics: allocation donut + weekly activity bars */}
@@ -632,32 +641,8 @@ export default async function AccountPage() {
           </Card>
         </section>
 
-        {/* Goal tracking + Arc economy */}
-        <section className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Target className="h-5 w-5" />
-                </span>
-                <div>
-                  <CardTitle className="text-lg">Goal tracking</CardTitle>
-                  <CardDescription>
-                    Set targets and watch your progress and finish date.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <GoalTracker
-                userId={user.id}
-                goals={goals ?? []}
-                balance={snapshot.walletBalance ?? 0}
-                weeklyRate={snapshot.coach.weeklyProjection}
-              />
-            </CardContent>
-          </Card>
-
+        {/* Arc economy / programmable wallet */}
+        <section>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">

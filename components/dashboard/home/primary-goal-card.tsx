@@ -6,7 +6,7 @@ function fmt(n: number) {
 }
 
 /** Pick a friendly emoji for a goal from its name. */
-function goalEmoji(name: string): string {
+export function goalEmoji(name: string): string {
   const n = name.toLowerCase();
   if (/(laptop|macbook|pc|computer)/.test(n)) return "💻";
   if (/(phone|iphone|gadget|device|airpod|watch)/.test(n)) return "📱";
