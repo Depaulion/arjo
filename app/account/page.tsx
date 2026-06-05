@@ -1,18 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  Award,
   BarChart3,
   Coins,
   Compass,
-  Flame,
   Gamepad2,
   History,
   Lock,
   ShieldCheck,
   Target,
   User as UserIcon,
-  Users,
   Vault,
   Wallet,
   Wand2,
@@ -74,51 +71,20 @@ import {
   type ActivityBar,
   type AllocationSlice,
 } from "@/components/dashboard/savings-charts";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { BalanceCard } from "@/components/dashboard/home/balance-card";
+import {
+  PrimaryGoalCard,
+  PrimaryGoalEmpty,
+} from "@/components/dashboard/home/primary-goal-card";
+import { AICoachTip } from "@/components/dashboard/home/ai-coach-tip";
+import { QuickActions } from "@/components/dashboard/home/quick-actions";
+import { ArcScoreCard } from "@/components/dashboard/home/arc-score-card";
 
 export const dynamic = "force-dynamic";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-}
-
-function StatTile({
-  label,
-  value,
-  unit,
-  sub,
-  icon,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  sub?: string;
-  icon: React.ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <Card
-      className={
-        accent ? "border-primary/30 bg-gradient-to-br from-card to-primary/10" : ""
-      }
-    >
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{label}</span>
-          <span className="text-primary">{icon}</span>
-        </div>
-        <p className="mt-2 text-3xl font-bold">
-          {value}
-          {unit && (
-            <span className="ml-1 text-base font-medium text-muted-foreground">
-              {unit}
-            </span>
-          )}
-        </p>
-        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
 }
 
 export default async function AccountPage() {
@@ -324,6 +290,27 @@ export default async function AccountPage() {
     })
     .reverse();
 
+  // --- Home hero figures ---
+  // Total savings = liquid wallet balance + everything locked in vaults.
+  const total = (availableBalance ?? 0) + vaultLocked;
+
+  // Net inflow this calendar month, for the "+X this month" pill.
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const monthDelta = ledgerEntries.reduce((s, e) => {
+    if (e.status === "failed" || !inflowKinds.has(e.kind)) return s;
+    return new Date(e.created_at) >= monthStart ? s + e.amount : s;
+  }, 0);
+
+  // The user's primary goal (most recent) drives the "Current goal" card.
+  const primaryGoal = (goals ?? [])[0] ?? null;
+
+  // Time-of-day greeting (server time).
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   // Personalised notifications: a welcome greeting plus gentle, state-derived
   // reminders. Computed here so the bell stays a presentational client widget.
   const firstName = safeProfile.full_name?.split(" ")[0] ?? null;
@@ -411,7 +398,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="dark min-h-screen scroll-smooth bg-background text-foreground">
+    <div className="min-h-screen scroll-smooth bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
@@ -438,6 +425,7 @@ export default async function AccountPage() {
                 <UserIcon className="h-4 w-4" />
               )}
             </Link>
+            <ThemeToggle />
             <NotificationBell notifications={notifications} />
             <DashboardNav
               walletAddress={safeProfile.arc_wallet_address}
@@ -448,72 +436,65 @@ export default async function AccountPage() {
       </header>
 
       <main className="container max-w-6xl space-y-8 py-10 pb-28">
-        {/* Greeting */}
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back
-              {safeProfile.full_name ? `, ${safeProfile.full_name}` : ""}
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              Your social savings dashboard on {ARC_TESTNET.name}.
-            </p>
+        {/* 1. Home hero — answers "how much do I have / what am I saving for /
+            what next" before any deeper analytics. */}
+        <section id="overview" className="scroll-mt-24 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm text-muted-foreground">{greeting},</p>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {firstName ?? "there"} 👋
+              </h1>
+            </div>
+            <Badge variant={snapshot.rpcOk ? "accent" : "outline"}>
+              {snapshot.rpcOk ? "Live · Arc Testnet" : "Arc Testnet"}
+            </Badge>
           </div>
-          <Badge variant={snapshot.rpcOk ? "accent" : "outline"}>
-            {snapshot.rpcOk ? "Live · Arc Testnet" : "Arc Testnet"}
-          </Badge>
-        </div>
 
-        {/* Prominent claim CTA when the wallet is ready; otherwise a setup
-            notice so the user knows their wallet is provisioning / can retry. */}
-        {safeProfile.arc_wallet_address ? (
-          <ClaimButton
-            address={safeProfile.arc_wallet_address}
-            balance={snapshot.walletBalance}
+          <BalanceCard
+            total={total}
+            available={availableBalance ?? 0}
+            locked={vaultLocked}
+            monthDelta={monthDelta}
             currency={safeProfile.preferred_stablecoin}
           />
-        ) : (
-          <WalletSetupBanner configured={isCircleConfigured()} />
-        )}
 
-        {/* 1. Savings Overview */}
-        <section
-          id="overview"
-          className="grid scroll-mt-24 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <StatTile
-            label="Available balance"
-            value={availableBalance === null ? "—" : fmt(availableBalance)}
-            unit={availableBalance === null ? undefined : "USDC"}
-            sub="Liquid USDC in your wallet"
-            icon={<Wallet className="h-4 w-4" />}
-            accent
+          {/* Claim CTA when the wallet is ready; otherwise a setup notice. */}
+          {safeProfile.arc_wallet_address ? (
+            <ClaimButton
+              address={safeProfile.arc_wallet_address}
+              balance={snapshot.walletBalance}
+              currency={safeProfile.preferred_stablecoin}
+            />
+          ) : (
+            <WalletSetupBanner configured={isCircleConfigured()} />
+          )}
+
+          <QuickActions />
+
+          {primaryGoal ? (
+            <PrimaryGoalCard
+              name={primaryGoal.name}
+              saved={Math.min(availableBalance ?? 0, primaryGoal.target_amount)}
+              target={primaryGoal.target_amount}
+              targetDate={primaryGoal.target_date}
+              currency={primaryGoal.currency}
+            />
+          ) : (
+            <PrimaryGoalEmpty />
+          )}
+
+          <AICoachTip
+            monthlyProjection={snapshot.coach.monthlyProjection}
+            weeklyProjection={snapshot.coach.weeklyProjection}
+            recommendation={snapshot.coach.recommendations[0] ?? snapshot.coach.summary}
+            currency={safeProfile.preferred_stablecoin}
           />
-          <StatTile
-            label="Contribution streak"
-            value={String(snapshot.streakWeeks)}
-            unit={snapshot.streakWeeks === 1 ? "week" : "weeks"}
-            sub={
-              snapshot.lastContributionAt
-                ? "Keep it going this week"
-                : "Make your first contribution"
-            }
-            icon={<Flame className="h-4 w-4" />}
-          />
-          <StatTile
-            label="Active circles"
-            value={String(myCircles.length)}
-            sub={`${activeCount} active · ${
-              myCircles.length - activeCount
-            } forming`}
-            icon={<Users className="h-4 w-4" />}
-          />
-          <StatTile
-            label="Reputation"
-            value={String(snapshot.reputationScore)}
-            unit="/100"
-            sub={snapshot.reputationLabel}
-            icon={<Award className="h-4 w-4" />}
+
+          <ArcScoreCard
+            score={snapshot.coach.healthScore}
+            label={snapshot.coach.healthLabel}
+            factors={snapshot.coach.factors}
           />
         </section>
 
