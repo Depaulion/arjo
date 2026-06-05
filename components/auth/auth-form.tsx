@@ -184,7 +184,7 @@ export function AuthForm() {
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        {mode === "signup" ? "Already have an account?" : "New to Arc Ajo?"}{" "}
+        {mode === "signup" ? "Already have an account?" : "New to Arjo?"}{" "}
         <button
           type="button"
           className="font-semibold text-primary hover:underline"

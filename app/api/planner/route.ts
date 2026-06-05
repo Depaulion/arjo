@@ -25,7 +25,7 @@ async function enrichWithClaude(
 ): Promise<{ summary?: string; recommendations?: string[] } | null> {
   const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-latest";
   const system =
-    "You are a friendly personal-finance coach for a stablecoin savings app (Arc Ajo) used across Africa. " +
+    "You are a friendly personal-finance coach for a stablecoin savings app (Arjo) used across Africa. " +
     "You are given a user's finances and a pre-computed, authoritative savings plan. " +
     "Do NOT change any numbers. Write warm, specific, practical guidance. " +
     "Respond with ONLY a JSON object: " +

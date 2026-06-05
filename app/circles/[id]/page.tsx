@@ -440,7 +440,7 @@ export default async function CircleDashboardPage({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />
             </span>
-            Arc<span className="text-primary">Ajo</span>
+            Ar<span className="text-primary">jo</span>
           </Link>
           <Link
             href="/account"

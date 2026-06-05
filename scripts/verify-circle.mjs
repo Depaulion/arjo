@@ -8,7 +8,7 @@ const client = initiateDeveloperControlledWalletsClient({
   entitySecret: process.env.CIRCLE_ENTITY_SECRET,
 });
 
-const ws = await client.createWalletSet({ name: "Arc Ajo Wallets" });
+const ws = await client.createWalletSet({ name: "Arjo Wallets" });
 const walletSetId = ws.data?.walletSet?.id;
 console.log("CIRCLE_WALLET_SET_ID=" + walletSetId);
 

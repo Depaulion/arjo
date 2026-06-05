@@ -1,4 +1,4 @@
-# Arc Ajo
+# Arjo
 
 Stablecoin-powered group savings, inspired by the Yoruba **Ajo** rotating-savings
 tradition — rebuilt on the **Arc (Circle) Testnet**. Pool funds with people you

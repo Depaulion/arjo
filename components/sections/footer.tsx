@@ -70,7 +70,7 @@ export function Footer() {
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <Coins className="h-5 w-5" />
               </span>
-              Arc<span className="text-primary">Ajo</span>
+              Ar<span className="text-primary">jo</span>
             </div>
             <p className="max-w-xs text-sm text-muted-foreground">
               Rotating savings circles, reimagined on-chain with stablecoins.
@@ -96,7 +96,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-6 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Arc Ajo · Test network — tokens have no
+            © {new Date().getFullYear()} Arjo · Test network — tokens have no
             real value.
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">

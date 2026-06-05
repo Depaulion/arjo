@@ -1,4 +1,4 @@
--- Arc Ajo — rotating payout engine (the heart of an Ajo / ROSCA)
+-- Arjo — rotating payout engine (the heart of an Ajo / ROSCA)
 -- Each period the pooled pot is paid out to the next member in the rotation.
 -- The pot is the circle creator's Arc wallet, so only the creator can trigger a
 -- payout. This migration gives the payout route what it needs while respecting

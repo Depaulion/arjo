@@ -21,9 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Docs · Arc Ajo",
+  title: "Docs · Arjo",
   description:
-    "How Arc Ajo works: rotating savings circles, wallets, security, and the Arc Testnet network it runs on.",
+    "How Arjo works: rotating savings circles, wallets, security, and the Arc Testnet network it runs on.",
 };
 
 const TOC = [
@@ -94,7 +94,7 @@ export default function DocsPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />
             </span>
-            Arc<span className="text-primary">Ajo</span>
+            Ar<span className="text-primary">jo</span>
           </Link>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
@@ -117,7 +117,7 @@ export default function DocsPage() {
             Documentation
           </Badge>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight">
-            How Arc Ajo works
+            How Arjo works
           </h1>
           <p className="mt-3 text-lg text-muted-foreground">
             Everything about the app — the savings tradition behind it, the five
@@ -151,7 +151,7 @@ export default function DocsPage() {
           <div className="max-w-3xl space-y-14">
             <Section id="overview" title="Overview">
               <p>
-                <strong className="text-foreground">Arc Ajo</strong> is a group
+                <strong className="text-foreground">Arjo</strong> is a group
                 savings app built on a simple, time-tested idea: a group of
                 people you trust each contribute a fixed amount on a regular
                 schedule, and each round the whole pot is paid out to one member
@@ -174,7 +174,7 @@ export default function DocsPage() {
                 </strong>
               </p>
               <p>
-                Arc Ajo brings that universal tradition on-chain — open to anyone,
+                Arjo brings that universal tradition on-chain — open to anyone,
                 anywhere — replacing the cash box and the trusted bookkeeper with
                 transparent stablecoin transfers, automated payouts, and a public
                 ledger every member can verify.
@@ -216,7 +216,7 @@ export default function DocsPage() {
             </Section>
 
             <Section id="features" title="Features">
-              <p>Arc Ajo is built on five pillars:</p>
+              <p>Arjo is built on five pillars:</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {PILLARS.map((p) => {
                   const Icon = p.icon;
@@ -242,7 +242,7 @@ export default function DocsPage() {
               <p className="flex items-start gap-2">
                 <Wallet className="mt-1 h-5 w-5 shrink-0 text-primary" />
                 <span>
-                  When you sign in, Arc Ajo provisions a programmable wallet for
+                  When you sign in, Arjo provisions a programmable wallet for
                   you on {ARC_TESTNET.name} automatically (powered by Circle). If
                   setup is ever interrupted, the dashboard retries on load and
                   shows a one-tap retry — so you always end up with a wallet.
@@ -305,7 +305,7 @@ export default function DocsPage() {
 
             <Section id="pricing" title="Pricing">
               <p>
-                Arc Ajo is{" "}
+                Arjo is{" "}
                 <strong className="text-foreground">free to use</strong> while it
                 runs on {ARC_TESTNET.name}. There are no platform fees and no
                 middleman taking a cut of your pot — the whole contribution goes
@@ -382,7 +382,7 @@ export default function DocsPage() {
 
             <Section id="roadmap" title="Roadmap">
               <p>
-                Arc Ajo is actively evolving. On the horizon: mainnet support,
+                Arjo is actively evolving. On the horizon: mainnet support,
                 richer circle governance, member invitations and notifications,
                 and deeper analytics. Want to shape it? See the source and open
                 an issue.
@@ -435,7 +435,7 @@ export default function DocsPage() {
                   </p>
                   <p>
                     No. Rotating savings circles are practised worldwide under
-                    many names. Arc Ajo honours the Yoruba origin of its name
+                    many names. Arjo honours the Yoruba origin of its name
                     while being built for everyone, everywhere.
                   </p>
                 </div>

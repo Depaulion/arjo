@@ -30,7 +30,7 @@ export function Hero() {
           </h1>
 
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Arc Ajo brings the age-old rotating savings circle on-chain — known
+            Arjo brings the age-old rotating savings circle on-chain — known
             as <em>Ajo</em> among the Yoruba, and as <em>esusu</em>,{" "}
             <em>tontine</em>, <em>susu</em>, and <em>chama</em> the world over.
             Pool funds with people you trust, automate every payout, and grow

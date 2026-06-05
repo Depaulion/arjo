@@ -9,9 +9,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Arc Ajo — Save Together, Powered by Stablecoins",
+  title: "Arjo — Save Together, Powered by Stablecoins",
   description:
-    "Arc Ajo brings the trusted Yoruba Ajo savings circle on-chain. Pool funds with people you trust, earn yield, and get your payout in stablecoins — transparent, automated, and borderless.",
+    "Arjo brings the trusted Yoruba Ajo savings circle on-chain. Pool funds with people you trust, earn yield, and get your payout in stablecoins — transparent, automated, and borderless.",
 };
 
 export default function RootLayout({

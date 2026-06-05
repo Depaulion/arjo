@@ -47,7 +47,7 @@ async function ensureWalletSetId() {
   if (cachedWalletSetId) return cachedWalletSetId;
 
   const client = getClient();
-  const res = await client.createWalletSet({ name: "Arc Ajo Wallets" });
+  const res = await client.createWalletSet({ name: "Arjo Wallets" });
   const id = res.data?.walletSet?.id;
   if (!id) throw new Error("Failed to create Circle wallet set.");
 

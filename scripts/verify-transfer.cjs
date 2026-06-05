@@ -49,7 +49,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     destinationAddress: TO_ADDRESS,
     amounts: [AMOUNT],
     fee: { type: "level", config: { feeLevel: "MEDIUM" } },
-    refId: "arc-ajo-verify",
+    refId: "arjo-verify",
   });
   const txId = created.data?.id;
   console.log(`  circleTxId = ${txId}`);

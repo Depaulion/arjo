@@ -1,4 +1,4 @@
--- Arc Ajo — SafeLock vaults, on-chain ledger, gamification & challenges
+-- Arjo — SafeLock vaults, on-chain ledger, gamification & challenges
 -- Phase B: turns the dashboard into a live, motivating savings product.
 --   * savings_plans  — PiggyVest/Cowrywise-style flex/locked/target/auto plans
 --   * ledger_entries — a record of every USDC movement (on-chain or pending)

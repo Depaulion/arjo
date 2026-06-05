@@ -27,7 +27,7 @@ export default async function LoginPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />
             </span>
-            Arc<span className="text-primary">Ajo</span>
+            Ar<span className="text-primary">jo</span>
           </Link>
 
           <div className="rounded-3xl border border-border/70 bg-card p-8 shadow-xl">
@@ -46,7 +46,7 @@ export default async function LoginPage() {
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing you agree to Arc Ajo&apos;s Terms and Privacy Policy.
+            By continuing you agree to Arjo&apos;s Terms and Privacy Policy.
           </p>
         </div>
       </div>

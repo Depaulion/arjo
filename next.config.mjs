@@ -28,7 +28,7 @@ function checkEnv() {
 
   const present = (k) => Boolean(process.env[k] && process.env[k].trim());
   const missingRequired = [];
-  const lines = ["", "[env-check] Arc Ajo environment:"];
+  const lines = ["", "[env-check] Arjo environment:"];
 
   for (const g of groups) {
     const have = g.vars.filter(present);

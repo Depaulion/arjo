@@ -418,7 +418,7 @@ export default async function AccountPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />
             </span>
-            Arc<span className="text-primary">Ajo</span>
+            Ar<span className="text-primary">jo</span>
           </Link>
           <div className="flex items-center gap-2">
             {/* Profile avatar — links to account settings to change the photo. */}

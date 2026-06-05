@@ -1,4 +1,4 @@
--- Arc Ajo — profile picture storage
+-- Arjo — profile picture storage
 -- A public "avatars" bucket so members can upload a profile photo. Files are
 -- namespaced by the owner's user id (avatars/<uid>/<file>) and RLS on
 -- storage.objects ensures a member can only write/replace/delete their own.

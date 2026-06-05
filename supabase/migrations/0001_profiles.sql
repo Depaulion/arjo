@@ -1,4 +1,4 @@
--- Arc Ajo — user profiles
+-- Arjo — user profiles
 -- Aligned with the Arc (Circle) ecosystem: members save in Arc stablecoins
 -- (USDC / EURC / USYC) and receive payouts to an Arc Testnet wallet.
 
@@ -17,7 +17,7 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.profiles is 'Public profile for each Arc Ajo member, 1:1 with auth.users.';
+comment on table public.profiles is 'Public profile for each Arjo member, 1:1 with auth.users.';
 comment on column public.profiles.arc_wallet_address is 'Member wallet on Arc Testnet (chain id 5042002) used for contributions and payouts.';
 comment on column public.profiles.preferred_stablecoin is 'Stablecoin the member saves in: USDC, EURC, or USYC.';
 

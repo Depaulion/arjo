@@ -1,4 +1,4 @@
--- Arc Ajo — Circle Programmable Wallet linkage
+-- Arjo — Circle Programmable Wallet linkage
 -- Each user is auto-provisioned a Circle developer-controlled wallet on Arc.
 -- The onchain address lives in profiles.arc_wallet_address (from 0001); here we
 -- track Circle's internal wallet id and the chain it was created on.

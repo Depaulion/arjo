@@ -1,4 +1,4 @@
--- Arc Ajo — circle membership, savings goals, and public discovery
+-- Arjo — circle membership, savings goals, and public discovery
 -- Turns the app from a single-creator profile tool into a social savings
 -- platform: members can join circles others created, the marketplace can list
 -- public circles, and each member can track personal savings goals.

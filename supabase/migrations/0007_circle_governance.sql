@@ -1,4 +1,4 @@
--- Arc Ajo — Circle Governance System
+-- Arjo — Circle Governance System
 -- Lets a circle's members collectively decide things instead of leaving every
 -- call to the creator. Members raise proposals, everyone votes YES/NO, and when
 -- YES reaches the approval threshold (default 70% of all members) the proposal

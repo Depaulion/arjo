@@ -1,4 +1,4 @@
--- Arc Ajo — savings circles (groups)
+-- Arjo — savings circles (groups)
 -- A circle is a rotating savings group: members contribute a fixed stablecoin
 -- amount each period, and take turns receiving the pooled payout on Arc.
 
@@ -21,7 +21,7 @@ create table if not exists public.circles (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.circles is 'Arc Ajo savings circles (groups). Contributions are denominated in an Arc stablecoin.';
+comment on table public.circles is 'Arjo savings circles (groups). Contributions are denominated in an Arc stablecoin.';
 comment on column public.circles.contribution_amount is 'Fixed amount each member contributes per period.';
 comment on column public.circles.currency is 'Arc stablecoin used for the circle: USDC, EURC, or USYC.';
 comment on column public.circles.member_count is 'Planned number of members (one payout round each).';

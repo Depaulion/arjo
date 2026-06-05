@@ -12,7 +12,7 @@ import {
  * it when they lock, and it transfers back (minus any early-exit penalty) when a
  * plan is withdrawn or matures.
  *
- * Reuses the shared Arc Ajo wallet set. Provide ARC_VAULT_WALLET_ID and
+ * Reuses the shared Arjo wallet set. Provide ARC_VAULT_WALLET_ID and
  * ARC_VAULT_ADDRESS via env after the first run to reuse the same vault across
  * restarts; otherwise we create one, cache it for this instance, and log the
  * ids to set.
@@ -36,7 +36,7 @@ async function createVault(): Promise<VaultWallet> {
   // Reuse the existing wallet set if configured; otherwise make a vault-only one.
   let walletSetId = process.env.CIRCLE_WALLET_SET_ID || null;
   if (!walletSetId) {
-    const set = await client.createWalletSet({ name: "Arc Ajo Vault" });
+    const set = await client.createWalletSet({ name: "Arjo Vault" });
     walletSetId = set.data?.walletSet?.id ?? null;
     if (!walletSetId) throw new Error("Failed to create vault wallet set.");
   }

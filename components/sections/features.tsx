@@ -55,7 +55,7 @@ export function Features() {
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
           <Badge variant="outline" className="mx-auto">
-            Why Arc Ajo
+            Why Arjo
           </Badge>
           <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
             The Ajo you trust, with the tech you deserve
