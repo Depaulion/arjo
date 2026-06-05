@@ -27,7 +27,9 @@ export default async function LoginPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />
             </span>
-            Ar<span className="text-primary">jo</span>
+            <span className="tracking-tight">
+              Ar<span className="text-primary">jo</span>
+            </span>
           </Link>
 
           <div className="rounded-3xl border border-border/70 bg-card p-8 shadow-xl">

@@ -17,7 +17,9 @@ export function Navbar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Coins className="h-5 w-5" />
           </span>
-          Ar<span className="text-primary">jo</span>
+          <span className="tracking-tight">
+            Ar<span className="text-primary">jo</span>
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

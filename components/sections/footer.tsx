@@ -70,7 +70,9 @@ export function Footer() {
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <Coins className="h-5 w-5" />
               </span>
-              Ar<span className="text-primary">jo</span>
+              <span className="tracking-tight">
+                Ar<span className="text-primary">jo</span>
+              </span>
             </div>
             <p className="max-w-xs text-sm text-muted-foreground">
               Rotating savings circles, reimagined on-chain with stablecoins.
