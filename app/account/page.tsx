@@ -56,6 +56,7 @@ import {
 } from "@/components/dashboard/circle-health";
 import { GoalsView } from "@/components/dashboard/goals/goals-view";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
+import { QuickSave } from "@/components/dashboard/save/quick-save";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -568,8 +569,17 @@ export default async function AccountPage() {
         }
         save={
         <>
+        {/* Quick Save — one-tap flex-vault deposits */}
+        <section id="save" className="scroll-mt-24">
+          <QuickSave
+            balance={availableBalance}
+            currency={safeProfile.preferred_stablecoin}
+            onChainEnabled={onChainEnabled}
+          />
+        </section>
+
         {/* Smart savings: SafeLock vaults + gamification */}
-        <section id="save" className="grid scroll-mt-24 gap-6 lg:grid-cols-2">
+        <section className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
