@@ -54,6 +54,7 @@ import {
   CircleHealth,
   type HealthCircle,
 } from "@/components/dashboard/circle-health";
+import { MyCircles } from "@/components/dashboard/circles/my-circles";
 import { GoalsView } from "@/components/dashboard/goals/goals-view";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { QuickSave } from "@/components/dashboard/save/quick-save";
@@ -737,7 +738,12 @@ export default async function AccountPage() {
         }
         circles={
         <>
-        {/* 3. Community Circles marketplace */}
+        {/* Your circles — rich cards linking to each dashboard */}
+        <section id="my-circles" className="scroll-mt-24">
+          <MyCircles circles={myCircles} />
+        </section>
+
+        {/* Community Circles marketplace */}
         <section id="community" className="scroll-mt-24">
           <Card>
             <CardHeader>
