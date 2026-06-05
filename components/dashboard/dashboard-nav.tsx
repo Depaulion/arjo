@@ -11,6 +11,7 @@ import {
   FileText,
   History,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   Plus,
@@ -192,6 +193,14 @@ export function DashboardNav({
             >
               <FileText className="h-4 w-4" />
               Docs
+            </Link>
+            <Link
+              href="/support"
+              onClick={() => setOpen(false)}
+              className={itemClass}
+            >
+              <LifeBuoy className="h-4 w-4" />
+              Help &amp; support
             </Link>
             <form action="/auth/signout" method="post">
               <button

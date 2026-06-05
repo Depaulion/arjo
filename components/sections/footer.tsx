@@ -24,7 +24,7 @@ const groups: { title: string; links: FooterLink[] }[] = [
       { label: "About", href: "/docs#overview" },
       { label: "Roadmap", href: "/docs#roadmap" },
       { label: "Source code", href: GITHUB_URL, external: true },
-      { label: "Contact", href: `${GITHUB_URL}/issues`, external: true },
+      { label: "Contact support", href: "/support" },
     ],
   },
   {
@@ -32,8 +32,8 @@ const groups: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Docs", href: "/docs" },
       { label: "FAQ", href: "/docs#faq" },
+      { label: "Help & support", href: "/support" },
       { label: "Faucet", href: ARC_TESTNET.faucetUrl, external: true },
-      { label: "Network status", href: ARC_TESTNET.explorerUrl, external: true },
     ],
   },
 ];

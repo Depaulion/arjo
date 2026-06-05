@@ -143,6 +143,52 @@ export type SavingsGoal = {
   updated_at: string;
 };
 
+// --- Customer support (migration 0010) ---
+
+export type SupportCategory =
+  | "general"
+  | "payments"
+  | "circles"
+  | "account"
+  | "bug"
+  | "other";
+
+export type SupportTicketStatus =
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "closed";
+
+export const SUPPORT_CATEGORIES: {
+  value: SupportCategory;
+  label: string;
+}[] = [
+  { value: "general", label: "General question" },
+  { value: "payments", label: "Payments & transfers" },
+  { value: "circles", label: "Circles & payouts" },
+  { value: "account", label: "Account & wallet" },
+  { value: "bug", label: "Report a bug" },
+  { value: "other", label: "Something else" },
+];
+
+export const SUPPORT_STATUS_LABELS: Record<SupportTicketStatus, string> = {
+  open: "Open",
+  in_progress: "In progress",
+  resolved: "Resolved",
+  closed: "Closed",
+};
+
+export type SupportTicket = {
+  id: string;
+  user_id: string;
+  subject: string;
+  category: SupportCategory;
+  message: string;
+  status: SupportTicketStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 // --- Phase B: savings plans, ledger, challenges, gamification ---
 
 export type SavingsPlanType = "flex" | "locked" | "target" | "auto";
