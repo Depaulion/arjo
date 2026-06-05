@@ -439,7 +439,10 @@ export default async function AccountPage() {
               )}
             </Link>
             <NotificationBell notifications={notifications} />
-            <DashboardNav />
+            <DashboardNav
+              walletAddress={safeProfile.arc_wallet_address}
+              currency={safeProfile.preferred_stablecoin}
+            />
           </div>
         </div>
       </header>

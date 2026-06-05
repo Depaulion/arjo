@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   BarChart3,
+  Check,
   Compass,
+  Copy,
+  ExternalLink,
   FileText,
   History,
   LayoutDashboard,
@@ -12,9 +15,11 @@ import {
   Menu,
   Plus,
   Vault,
+  Wallet,
   X,
 } from "lucide-react";
 
+import { arcAddressUrl, shortenHex } from "@/lib/arc";
 import { Button } from "@/components/ui/button";
 
 const SECTIONS = [
@@ -33,9 +38,27 @@ const itemClass =
  * desktop plus a hamburger menu that opens a dropdown with section jump-links
  * and account actions. Closes on outside-click, Escape, or selecting an item.
  */
-export function DashboardNav() {
+export function DashboardNav({
+  walletAddress = null,
+  currency = "USDC",
+}: {
+  walletAddress?: string | null;
+  currency?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  async function copyAddress() {
+    if (!walletAddress) return;
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard unavailable (e.g. insecure context) — silently ignore.
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -99,6 +122,58 @@ export function DashboardNav() {
                 </a>
               );
             })}
+
+            <div className="my-2 h-px bg-border/60" />
+
+            {/* Wallet — show the Arc address with copy + explorer shortcuts. */}
+            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Wallet
+            </p>
+            {walletAddress ? (
+              <div className="rounded-xl bg-secondary/40 px-3 py-2.5">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="font-mono">{shortenHex(walletAddress)}</span>
+                  <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {currency}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={copyAddress}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-2 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href={arcAddressUrl(walletAddress)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-2 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Explorer
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl bg-secondary/40 px-3 py-2.5 text-xs text-muted-foreground">
+                <Wallet className="h-4 w-4" />
+                Wallet provisioning…
+              </div>
+            )}
 
             <div className="my-2 h-px bg-border/60" />
 
