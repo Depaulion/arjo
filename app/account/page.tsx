@@ -60,7 +60,7 @@ import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { BottomNav } from "@/components/dashboard/bottom-nav";
+import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import {
   NotificationBell,
@@ -435,9 +435,10 @@ export default async function AccountPage() {
         </div>
       </header>
 
-      <main className="container max-w-6xl space-y-8 py-10 pb-28">
-        {/* 1. Home hero — answers "how much do I have / what am I saving for /
-            what next" before any deeper analytics. */}
+      <DashboardTabs
+        home={
+        /* 1. Home hero — answers "how much do I have / what am I saving for /
+            what next" before any deeper analytics. */
         <section id="overview" className="scroll-mt-24 space-y-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -497,7 +498,9 @@ export default async function AccountPage() {
             factors={snapshot.coach.factors}
           />
         </section>
-
+        }
+        stats={
+        <>
         {/* Analytics: allocation donut + weekly activity bars */}
         <section id="analytics" className="scroll-mt-24">
           <Card>
@@ -552,7 +555,10 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
         </section>
-
+        </>
+        }
+        save={
+        <>
         {/* Smart savings: SafeLock vaults + gamification */}
         <section id="save" className="grid scroll-mt-24 gap-6 lg:grid-cols-2">
           <Card>
@@ -626,55 +632,7 @@ export default async function AccountPage() {
           </Card>
         </section>
 
-        {/* On-chain activity feed */}
-        <section id="activity" className="scroll-mt-24">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <History className="h-5 w-5" />
-                </span>
-                <div>
-                  <CardTitle className="text-lg">Recent activity</CardTitle>
-                  <CardDescription>
-                    Every USDC action, settled on {ARC_TESTNET.name}.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ActivityFeed entries={ledgerEntries} hasPending={hasPending} />
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* 3. Community Circles marketplace */}
-        <section id="community" className="scroll-mt-24">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Compass className="h-5 w-5" />
-                </span>
-                <div>
-                  <CardTitle className="text-lg">Community savings</CardTitle>
-                  <CardDescription>
-                    Discover public savings circles and join one.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CommunitySavings
-                circles={marketplaceCircles}
-                joinedIds={joinedIds}
-                userId={user.id}
-              />
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* 5 + 6. Goals and Arc economy */}
+        {/* Goal tracking + Arc economy */}
         <section className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -755,7 +713,64 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
         </section>
-
+        </>
+        }
+        activity={
+        <>
+        {/* On-chain activity feed */}
+        <section id="activity" className="scroll-mt-24">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <History className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Recent activity</CardTitle>
+                  <CardDescription>
+                    Every USDC action, settled on {ARC_TESTNET.name}.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ActivityFeed entries={ledgerEntries} hasPending={hasPending} />
+            </CardContent>
+          </Card>
+        </section>
+        </>
+        }
+        circles={
+        <>
+        {/* 3. Community Circles marketplace */}
+        <section id="community" className="scroll-mt-24">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Compass className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-lg">Community savings</CardTitle>
+                  <CardDescription>
+                    Discover public savings circles and join one.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CommunitySavings
+                circles={marketplaceCircles}
+                joinedIds={joinedIds}
+                userId={user.id}
+              />
+            </CardContent>
+          </Card>
+        </section>
+        </>
+        }
+        settings={
+        <>
         {/* Account settings */}
         <section id="settings" className="scroll-mt-24">
           <Card>
@@ -770,9 +785,9 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
         </section>
-      </main>
-
-      <BottomNav />
+        </>
+        }
+      />
     </div>
   );
 }

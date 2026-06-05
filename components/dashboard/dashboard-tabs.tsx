@@ -1,0 +1,125 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { BarChart3, History, Home, Users, Vault } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+const TABS = [
+  { id: "home", label: "Home", icon: Home },
+  { id: "stats", label: "Stats", icon: BarChart3 },
+  { id: "save", label: "Save", icon: Vault },
+  { id: "circles", label: "Circles", icon: Users },
+  { id: "activity", label: "Activity", icon: History },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+type View = TabId | "settings";
+
+/**
+ * Legacy hash anchors (used by notifications, the header avatar and in-card
+ * CTAs like `#save`) mapped to the new tabbed views, so every existing deep
+ * link keeps working after the switch from one long scroll to real tabs.
+ */
+const HASH_TO_VIEW: Record<string, View> = {
+  overview: "home",
+  analytics: "stats",
+  save: "save",
+  community: "circles",
+  activity: "activity",
+  settings: "settings",
+  goals: "save",
+};
+
+/**
+ * Turns the dashboard into a real tabbed app: only the active tab's content is
+ * mounted on screen, with a floating bottom nav to switch. This keeps each
+ * screen focused (one job at a time) instead of one long scroll.
+ */
+export function DashboardTabs({
+  home,
+  stats,
+  save,
+  circles,
+  activity,
+  settings,
+}: {
+  home: React.ReactNode;
+  stats: React.ReactNode;
+  save: React.ReactNode;
+  circles: React.ReactNode;
+  activity: React.ReactNode;
+  settings: React.ReactNode;
+}) {
+  const [active, setActive] = useState<View>("home");
+
+  // Honour hash links from anywhere (header avatar, notifications, CTAs).
+  useEffect(() => {
+    const apply = () => {
+      const h = window.location.hash.replace("#", "");
+      const view = HASH_TO_VIEW[h];
+      if (view) {
+        setActive(view);
+        window.scrollTo({ top: 0 });
+      }
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
+
+  const select = (view: View) => {
+    setActive(view);
+    // Clear any lingering hash so re-clicking the same anchor still works.
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const views: Record<View, React.ReactNode> = {
+    home,
+    stats,
+    save,
+    circles,
+    activity,
+    settings,
+  };
+
+  return (
+    <>
+      <main className="container max-w-3xl space-y-5 py-6 pb-28">
+        {views[active]}
+      </main>
+
+      <nav className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border/60 bg-card/80 p-1.5 shadow-xl shadow-black/20 backdrop-blur-md">
+          {TABS.map((it) => {
+            const Icon = it.icon;
+            const isActive = active === it.id;
+            return (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => select(it.id)}
+                aria-label={it.label}
+                aria-current={isActive ? "true" : undefined}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-300",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className={isActive ? "inline" : "hidden sm:inline"}>
+                  {it.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </>
+  );
+}
