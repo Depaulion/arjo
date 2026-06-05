@@ -162,10 +162,11 @@ export default function DocsPage() {
               <p>
                 This rotating savings circle is one of humanity&apos;s oldest
                 financial tools. It&apos;s called{" "}
-                <em className="text-foreground">Ajo</em> or{" "}
-                <em className="text-foreground">Esusu</em> among the Yoruba —
-                where this app takes its name — but the same practice exists
-                across the world: <em>tontine</em> in West Africa and France,{" "}
+                <em className="text-foreground">ajo</em> or{" "}
+                <em className="text-foreground">esusu</em> in parts of West
+                Africa — where this app takes its name — but the same practice
+                exists across the world: <em>tontine</em> in West Africa and
+                France,{" "}
                 <em>susu</em> in Ghana and the Caribbean, <em>chama</em> in
                 Kenya, <em>hui</em> in China, <em>tanda</em> in Mexico,{" "}
                 <em>committee</em> in South Asia, and{" "}
@@ -433,11 +434,11 @@ export default function DocsPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">
-                    Is Ajo only for one region?
+                    Is Arjo only for one region?
                   </p>
                   <p>
                     No. Rotating savings circles are practised worldwide under
-                    many names. Arjo honours the Yoruba origin of its name
+                    many names. Arjo draws its name from that shared tradition
                     while being built for everyone, everywhere.
                   </p>
                 </div>

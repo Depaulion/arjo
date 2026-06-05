@@ -76,8 +76,8 @@ export function Footer() {
             </div>
             <p className="max-w-xs text-sm text-muted-foreground">
               Rotating savings circles, reimagined on-chain with stablecoins.
-              Born from the Yoruba <em>Ajo</em> tradition and practised the world
-              over — built for everyone, everywhere.
+              An age-old <em>ajo</em> tradition practised the world over — built
+              for everyone, everywhere.
             </p>
             <Badge variant="accent">Running on {ARC_TESTNET.name}</Badge>
           </div>

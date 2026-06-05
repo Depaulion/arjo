@@ -30,12 +30,12 @@ export function Hero() {
           </h1>
 
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Arjo brings the age-old rotating savings circle on-chain — known
-            as <em>Ajo</em> among the Yoruba, and as <em>esusu</em>,{" "}
-            <em>tontine</em>, <em>susu</em>, and <em>chama</em> the world over.
-            Pool funds with people you trust, automate every payout, and grow
-            your money in stablecoins — transparent, borderless, and free from
-            middlemen.
+            Arjo brings the age-old rotating savings circle on-chain, the
+            practice known the world over as <em>ajo</em>, <em>esusu</em>,{" "}
+            <em>tontine</em>, <em>susu</em>, <em>chama</em>, and{" "}
+            <em>tanda</em>. Pool funds with people you trust, automate every
+            payout, and grow your money in stablecoins, transparent,
+            borderless, and free from middlemen.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
