@@ -57,6 +57,8 @@ export type CircleMember = {
   paid_out: boolean;
   paid_at: string | null;
   payout_tx_hash: string | null;
+  /** Awaiting refund settlement after an approved exit/removal (migration 0009). */
+  pending_exit: boolean;
   joined_at: string;
 };
 

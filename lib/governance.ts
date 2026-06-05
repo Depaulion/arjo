@@ -14,6 +14,8 @@ export type GovMember = {
   payout_position: number | null;
   payout_address: string | null;
   reputation: number;
+  /** Awaiting on-chain refund settlement after an approved exit/removal. */
+  pending_exit: boolean;
 };
 
 /** A proposal with its vote tally computed against the circle's membership. */
@@ -59,7 +61,9 @@ export async function getGovernanceData(
   try {
     const { data: memberRows } = await supabase
       .from("circle_members")
-      .select("user_id, role, payout_position, payout_address, reputation")
+      .select(
+        "user_id, role, payout_position, payout_address, reputation, pending_exit"
+      )
       .eq("circle_id", circleId);
 
     const members: GovMember[] = (memberRows ?? []).map((m) => ({
@@ -68,6 +72,7 @@ export async function getGovernanceData(
       payout_position: (m.payout_position as number | null) ?? null,
       payout_address: (m.payout_address as string | null) ?? null,
       reputation: (m.reputation as number | null) ?? 100,
+      pending_exit: Boolean(m.pending_exit),
     }));
     members.sort(
       (a, b) =>

@@ -193,6 +193,7 @@ export function GovernancePanel({
           proposals.map((p) => (
             <ProposalCard
               key={p.id}
+              circleId={circleId}
               proposal={p}
               currentUserId={currentUserId}
               isMember={isMember}
@@ -207,12 +208,14 @@ export function GovernancePanel({
 }
 
 function ProposalCard({
+  circleId,
   proposal,
   currentUserId,
   isMember,
   isCreator,
   memberById,
 }: {
+  circleId: string;
   proposal: ProposalWithTally;
   currentUserId: string | null;
   isMember: boolean;
@@ -220,14 +223,25 @@ function ProposalCard({
   memberById: Map<string, GovMember>;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState<VoteChoice | "cancel" | null>(null);
+  const [loading, setLoading] = useState<VoteChoice | "cancel" | "settle" | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const open = proposal.status === "OPEN";
   const status = STATUS_BADGE[proposal.status];
   const target = proposal.target_user_id
     ? memberById.get(proposal.target_user_id)
     : undefined;
+
+  // An approved exit/removal that the creator still needs to settle (refund the
+  // leaving member's net contributions on-chain, then remove them).
+  const isExit =
+    proposal.type === "MEMBER_EXIT_REQUEST" ||
+    proposal.type === "MEMBER_REMOVAL";
+  const awaitingSettlement =
+    isExit && proposal.status === "APPROVED" && Boolean(target?.pending_exit);
   const yesPct = Math.round(proposal.yesPct);
   const noPct = Math.round(proposal.noPct);
   const notVoted = Math.max(
@@ -265,6 +279,31 @@ function ProposalCard({
       setError("Could not cancel this proposal.");
       return;
     }
+    router.refresh();
+  }
+
+  async function settle() {
+    setError(null);
+    setNotice(null);
+    setLoading("settle");
+    const res = await fetch(`/api/circles/${circleId}/settle-exit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ proposalId: proposal.id }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setLoading(null);
+    if (!res.ok) {
+      setError(json.error ?? "Could not settle this exit.");
+      return;
+    }
+    const amount = Number(json.refund) || 0;
+    const cur = json.currency ?? "";
+    setNotice(
+      amount > 0
+        ? `Refunded ${amount} ${cur} and removed the member.`
+        : json.message ?? "Exit settled.",
+    );
     router.refresh();
   }
 
@@ -370,6 +409,30 @@ function ProposalCard({
             )}
           </div>
         )}
+        {/* Creator settles an approved exit: refund net contributions, remove. */}
+        {awaitingSettlement && isCreator && (
+          <div className="space-y-2 rounded-xl border border-accent/30 bg-accent/5 p-3">
+            <p className="text-sm">
+              Approved — settle to refund{" "}
+              {memberLabel(target, currentUserId)}&apos;s net contributions from
+              the pot and remove them from the circle.
+            </p>
+            <Button size="sm" onClick={settle} disabled={loading !== null}>
+              {loading === "settle" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4" />
+              )}
+              Settle &amp; refund
+            </Button>
+          </div>
+        )}
+        {awaitingSettlement && !isCreator && (
+          <p className="text-xs text-muted-foreground">
+            Approved — awaiting the circle creator to settle the refund.
+          </p>
+        )}
+        {notice && <p className="text-sm text-primary">{notice}</p>}
         {error && <p className="text-sm text-destructive">{error}</p>}
       </CardContent>
     </Card>
