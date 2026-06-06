@@ -16,6 +16,11 @@ export type GovMember = {
   reputation: number;
   /** Awaiting on-chain refund settlement after an approved exit/removal. */
   pending_exit: boolean;
+  /** Bond + defaulter standing (migrations 0013/0015), for creator resolution. */
+  bond_amount: number;
+  bond_status: CircleMember["bond_status"];
+  default_status: CircleMember["default_status"];
+  grace_period_ends: string | null;
 };
 
 /** A proposal with its vote tally computed against the circle's membership. */
@@ -62,7 +67,7 @@ export async function getGovernanceData(
     const { data: memberRows } = await supabase
       .from("circle_members")
       .select(
-        "user_id, role, payout_position, payout_address, reputation, pending_exit"
+        "user_id, role, payout_position, payout_address, reputation, pending_exit, bond_amount, bond_status, default_status, grace_period_ends"
       )
       .eq("circle_id", circleId);
 
@@ -73,6 +78,12 @@ export async function getGovernanceData(
       payout_address: (m.payout_address as string | null) ?? null,
       reputation: (m.reputation as number | null) ?? 100,
       pending_exit: Boolean(m.pending_exit),
+      bond_amount: (m.bond_amount as number | null) ?? 0,
+      bond_status:
+        (m.bond_status as CircleMember["bond_status"] | null) ?? "held",
+      default_status:
+        (m.default_status as CircleMember["default_status"] | null) ?? "none",
+      grace_period_ends: (m.grace_period_ends as string | null) ?? null,
     }));
     members.sort(
       (a, b) =>

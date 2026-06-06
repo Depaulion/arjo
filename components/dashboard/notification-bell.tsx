@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Bell,
   Coins,
   Flame,
+  Gift,
   PartyPopper,
   RefreshCw,
+  ShieldCheck,
   Sparkles,
   Users,
   Vote,
@@ -17,7 +20,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-export type NotificationTone = "welcome" | "reminder" | "info";
+export type NotificationTone = "welcome" | "reminder" | "info" | "alert";
 
 export type AppNotification = {
   id: string;
@@ -37,12 +40,16 @@ const ICONS = {
   members: Users,
   sync: RefreshCw,
   spark: Sparkles,
+  alert: AlertTriangle,
+  shield: ShieldCheck,
+  gift: Gift,
 } satisfies Record<string, LucideIcon>;
 
 const TONE_STYLES: Record<NotificationTone, string> = {
   welcome: "bg-primary/15 text-primary",
   reminder: "bg-amber-500/15 text-amber-500",
   info: "bg-secondary text-muted-foreground",
+  alert: "bg-red-500/15 text-red-500",
 };
 
 /**

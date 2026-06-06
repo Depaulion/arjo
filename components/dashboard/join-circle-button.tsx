@@ -4,45 +4,75 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, UserPlus } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export function JoinCircleButton({
   circleId,
-  userId,
   joined,
 }: {
   circleId: string;
-  userId: string;
+  /** Present for API parity with callers; the join route derives the user. */
+  userId?: string;
   joined: boolean;
 }) {
   const router = useRouter();
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [done, setDone] = useState(joined);
 
   async function join() {
     setLoading(true);
     setError(null);
-    const { error } = await supabase
-      .from("circle_members")
-      .insert({ circle_id: circleId, user_id: userId, role: "member" });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/circles/${circleId}/join`, {
+        method: "POST",
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        bond?: number;
+        bondMultiplier?: number;
+        currency?: string;
+        pending?: boolean;
+      };
+      if (!res.ok) {
+        setError(json.error ?? "Could not join this circle.");
+        return;
+      }
+      if (json.bond && json.bond > 0) {
+        const surcharge =
+          json.bondMultiplier && json.bondMultiplier > 1
+            ? ` (${json.bondMultiplier}× risk surcharge)`
+            : "";
+        setNotice(
+          json.pending
+            ? `Joined. Bond of ${json.bond} ${json.currency}${surcharge} is pending — fund your Arc wallet and it will settle.`
+            : `Joined. ${json.bond} ${json.currency}${surcharge} bond is held and refunded when you complete the circle.`
+        );
+      }
+      setDone(true);
+      router.refresh();
+    } catch {
+      setError("Network error — please try again.");
+    } finally {
+      setLoading(false);
     }
-    setDone(true);
-    router.refresh();
   }
 
   if (done) {
     return (
-      <Button size="sm" variant="outline" disabled className="shrink-0">
-        <Check className="h-4 w-4" />
-        Joined
-      </Button>
+      <div className="flex flex-col items-end gap-1">
+        <Button size="sm" variant="outline" disabled className="shrink-0">
+          <Check className="h-4 w-4" />
+          Joined
+        </Button>
+        {notice && (
+          <p className="max-w-[16rem] text-right text-xs text-muted-foreground">
+            {notice}
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -56,7 +86,11 @@ export function JoinCircleButton({
         )}
         Join
       </Button>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p className="max-w-[16rem] text-right text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

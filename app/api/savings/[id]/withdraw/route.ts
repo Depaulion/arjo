@@ -5,7 +5,7 @@ import { isCircleConfigured } from "@/lib/circle";
 import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
-import { SAFELOCK_APY } from "@/lib/financial-planner";
+import { accrueYield, effectiveApy } from "@/lib/yield-engine";
 import type { SavingsPlan } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -54,14 +54,14 @@ export async function POST(
   if (isEarly) {
     penalty = Math.round(principal * EARLY_WITHDRAWAL_PENALTY * 100) / 100;
   } else {
-    // Matured / on-time: credit the advertised bonus pro-rated over the time held.
-    const created = new Date(plan.created_at);
-    const monthsHeld = Math.max(
-      0,
-      (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    );
-    const rate = (plan.apy_bonus || SAFELOCK_APY * 100) / 100;
-    bonus = Math.round(principal * rate * (monthsHeld / 12) * 100) / 100;
+    // Matured / on-time: credit the USYC yield accrued (daily-compounded) over
+    // the time the principal was held. See lib/yield-engine.ts.
+    bonus = accrueYield({
+      principal,
+      from: plan.created_at,
+      to: now,
+      apy: effectiveApy(plan.apy_bonus),
+    });
   }
 
   const payout = Math.max(0, principal - penalty + bonus);
@@ -108,7 +108,7 @@ export async function POST(
       currency,
       planId: plan.id,
       status: "confirmed",
-      note: "SafeLock yield bonus",
+      note: "USYC yield (Treasury-backed)",
     });
   }
 

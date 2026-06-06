@@ -23,6 +23,7 @@ export function CreateCircleForm({
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<CircleFrequency>("monthly");
   const [memberCount, setMemberCount] = useState("8");
+  const [requiredBond, setRequiredBond] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,6 +35,7 @@ export function CreateCircleForm({
 
     const contribution = Number(amount);
     const members = Number(memberCount);
+    const bond = requiredBond.trim() === "" ? 0 : Number(requiredBond);
 
     if (!name.trim()) {
       setError("Give your circle a name.");
@@ -47,6 +49,10 @@ export function CreateCircleForm({
       setError("A circle needs between 2 and 100 members.");
       return;
     }
+    if (!Number.isFinite(bond) || bond < 0) {
+      setError("Bond must be zero or a positive amount.");
+      return;
+    }
 
     setLoading(true);
     const { error } = await supabase.from("circles").insert({
@@ -56,6 +62,7 @@ export function CreateCircleForm({
       currency,
       frequency,
       member_count: members,
+      required_bond: bond,
       description: description.trim() || null,
       is_public: isPublic,
     });
@@ -150,6 +157,33 @@ export function CreateCircleForm({
             className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="requiredBond" className="text-sm font-medium">
+          Member bond <span className="text-muted-foreground">(optional)</span>
+        </label>
+        <div className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+          <input
+            id="requiredBond"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={requiredBond}
+            onChange={(e) => setRequiredBond(e.target.value)}
+            placeholder="0"
+            className="h-11 w-full rounded-xl bg-transparent px-4 text-sm focus:outline-none"
+          />
+          <span className="px-4 text-sm font-semibold text-muted-foreground">
+            {currency}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          A refundable stake each member posts to join. Held in the vault and
+          returned when they complete the circle — or slashed if they default.
+          Higher-risk members may be asked for 2–3×. Leave at 0 for no bond.
+        </p>
       </div>
 
       <div className="space-y-1.5">

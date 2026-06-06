@@ -2,15 +2,19 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft,
+  ArrowLeftRight,
   Award,
   Coins,
   ExternalLink,
   Gamepad2,
+  Landmark,
   Lock,
   PiggyBank,
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
+  UserCheck,
   Vault,
   Wallet,
   Wand2,
@@ -31,6 +35,9 @@ const TOC = [
   { id: "how-it-works", label: "How it works" },
   { id: "features", label: "Features" },
   { id: "wallet", label: "Your wallet & test USDC" },
+  { id: "yield", label: "Yield & APY" },
+  { id: "safety", label: "Member safety & defaulters" },
+  { id: "ramps", label: "Funding & cashing out" },
   { id: "security", label: "Security & custody" },
   { id: "pricing", label: "Pricing" },
   { id: "network", label: "Arc Testnet network" },
@@ -282,6 +289,160 @@ export default function DocsPage() {
               </p>
             </Section>
 
+            <Section id="yield" title="Yield & APY">
+              <p className="flex items-start gap-2">
+                <TrendingUp className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  When you lock funds in a SafeLock vault or run an automated
+                  plan, Arjo advertises an annualised bonus —{" "}
+                  <strong className="text-foreground">8% on SafeLock</strong>,
+                  4% on target plans, and 2% on auto-save. A fair question
+                  follows: <em>where does that yield actually come from?</em>
+                </span>
+              </p>
+              <p>
+                It isn&apos;t conjured out of thin air, and it isn&apos;t paid
+                by new deposits (the structure that makes Ponzi schemes
+                collapse). The yield comes from{" "}
+                <strong className="text-foreground">USYC</strong> — a
+                regulated, yield-bearing stablecoin from Circle and Hashnote
+                that is fully backed by{" "}
+                <strong className="text-foreground">
+                  short-term U.S. Treasury bills and reverse-repo
+                </strong>
+                . Idle funds that aren&apos;t mid-rotation are held in USYC, so
+                they earn the underlying Treasury rate while they wait. The bonus
+                Arjo credits at maturity is your share of that real yield.
+              </p>
+              <ul className="list-disc space-y-2 pl-5 marker:text-primary">
+                <li>
+                  <strong className="text-foreground">The source is real.</strong>{" "}
+                  USYC&apos;s return tracks short-dated government debt — among
+                  the most conservative yields in finance — not speculative DeFi
+                  farming.
+                </li>
+                <li>
+                  <strong className="text-foreground">It&apos;s pro-rated.</strong>{" "}
+                  Bonus is credited for the time your funds were actually held,
+                  not granted up front — withdraw on day one and you earn nothing
+                  extra.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Rates can move.
+                  </strong>{" "}
+                  Because the yield is tied to Treasury rates, the advertised APY
+                  is a target that tracks the market, not a fixed promise.
+                </li>
+              </ul>
+              <p className="rounded-2xl border border-accent/40 bg-accent/5 p-4 text-sm">
+                On {ARC_TESTNET.name} these figures are illustrative — test
+                tokens carry no real value and earn no real yield. The mechanism
+                above is how yield is sourced once Arjo runs on mainnet.
+              </p>
+            </Section>
+
+            <Section id="safety" title="Member safety & defaulters">
+              <p className="flex items-start gap-2">
+                <UserCheck className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  A rotating circle only works if members keep contributing
+                  after they&apos;ve received their payout. Arjo doesn&apos;t
+                  rely on blind trust — it layers several protections so an
+                  honest member is never left exposed to a defaulter.
+                </span>
+              </p>
+              <ul className="list-disc space-y-2 pl-5 marker:text-primary">
+                <li>
+                  <strong className="text-foreground">
+                    Reputation you can verify.
+                  </strong>{" "}
+                  Every contribution and payout is on-chain. Members build a
+                  reputation score and badges from real history, so you can see
+                  who has reliably paid into past circles before you join one
+                  with them.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Transparent pot.
+                  </strong>{" "}
+                  No organiser hides the money. The circle balance is a public
+                  on-chain balance every member can audit on the block explorer,
+                  so a missed contribution is visible to everyone immediately.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Penalties &amp; locked terms.
+                  </strong>{" "}
+                  SafeLock funds carry a 10% early-withdrawal penalty, so pulling
+                  out before a commitment ends has a real cost — discouraging the
+                  impulsive exits that destabilise a group.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Governed exits with settlement.
+                  </strong>{" "}
+                  Removing a member or approving an exit runs through a circle
+                  proposal. When it passes, the member is settled — their net
+                  contributions are refunded and they&apos;re removed cleanly —
+                  rather than vanishing and leaving the books unbalanced.
+                </li>
+              </ul>
+              <p>
+                On the roadmap: optional contribution bonds (a refundable stake
+                that backstops a missed round) and grace-period reminders before
+                a member is flagged — deepening protection without punishing an
+                honest late payment.
+              </p>
+            </Section>
+
+            <Section id="ramps" title="Funding &amp; cashing out">
+              <p className="flex items-start gap-2">
+                <ArrowLeftRight className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  Getting money <em>in</em> and <em>out</em> easily is what makes
+                  a savings app usable in real life. Here&apos;s how funding
+                  (on-ramp) and cashing out (off-ramp) work.
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <PiggyBank className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  <strong className="text-foreground">Today, on testnet:</strong>{" "}
+                  you fund your wallet with free test USDC from the{" "}
+                  <a
+                    className="font-medium text-primary hover:underline"
+                    href={ARC_TESTNET.faucetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Circle faucet
+                  </a>{" "}
+                  — one tap from your dashboard. There&apos;s nothing to cash out
+                  because test tokens hold no real value.
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Landmark className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  <strong className="text-foreground">On mainnet:</strong> because
+                  balances are real USDC/EURC/USYC, on- and off-ramps connect to
+                  the local money rails members already use — card and bank
+                  transfer in supported regions, and partner ramps for cash and
+                  mobile money where those dominate. You buy stablecoins straight
+                  into your Arjo wallet, and cash out from it the same way — no
+                  separate exchange account to manage.
+                </span>
+              </p>
+              <p>
+                Ramps are deliberately built as a pluggable layer so Arjo can use
+                the best-available provider in each market rather than locking
+                everyone to one. Entering payment details always happens on the
+                provider&apos;s own secure screen — Arjo never asks you to type
+                card or bank credentials into the app.
+              </p>
+            </Section>
+
             <Section id="security" title="Security & custody">
               <p className="flex items-start gap-2">
                 <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-primary" />
@@ -420,6 +581,41 @@ export default function DocsPage() {
                   <p>
                     Not on {ARC_TESTNET.name} — it uses free test tokens with no
                     real value, so you can explore safely.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Where does the savings APY come from?
+                  </p>
+                  <p>
+                    From real yield, not new deposits. Idle funds are held in
+                    USYC — a regulated stablecoin backed by short-term U.S.
+                    Treasuries — and the bonus credited at maturity is your share
+                    of that return. See{" "}
+                    <a
+                      className="font-medium text-primary hover:underline"
+                      href="#yield"
+                    >
+                      Yield &amp; APY
+                    </a>{" "}
+                    for the full picture.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    What happens if a member stops paying?
+                  </p>
+                  <p>
+                    On-chain reputation, a transparent pot, early-exit penalties,
+                    and governed exits with refund settlement all protect honest
+                    members. See{" "}
+                    <a
+                      className="font-medium text-primary hover:underline"
+                      href="#safety"
+                    >
+                      Member safety &amp; defaulters
+                    </a>
+                    .
                   </p>
                 </div>
                 <div>

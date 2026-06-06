@@ -10,10 +10,16 @@ import "server-only";
 
 import { getUsdcBalance, getUsdcTransfers, type UsdcTransfer } from "@/lib/arc-onchain";
 import { analyzeSavings, type SavingsCoachAnalysis } from "@/lib/savings-coach";
+import {
+  assessRisk,
+  computeReputationScore,
+  consistencyRate,
+  reputationLabel,
+} from "@/lib/risk-engine";
+import type { RiskTier } from "@/lib/types";
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
-const clamp = (n: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, n));
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export type DashboardSnapshot = {
@@ -30,17 +36,13 @@ export type DashboardSnapshot = {
   lastContributionAt: string | null;
   reputationScore: number;
   reputationLabel: string;
+  /** Rule-based risk tier from lib/risk-engine.ts. */
+  riskTier: RiskTier;
+  /** Plain-language drivers behind the risk tier. */
+  riskReasons: string[];
   coach: SavingsCoachAnalysis;
   recentTransfers: UsdcTransfer[];
 };
-
-function reputationLabel(score: number): string {
-  if (score >= 85) return "Trusted saver";
-  if (score >= 70) return "Reliable";
-  if (score >= 50) return "Established";
-  if (score >= 30) return "Rising";
-  return "Newcomer";
-}
 
 /** Consecutive weeks (counting back from the current week) with ≥1 contribution. */
 function contributionStreak(timestamps: number[]): number {
@@ -57,8 +59,21 @@ export async function getDashboardSnapshot(input: {
   walletAddress: string | null;
   activeCircles: number;
   goalCount: number;
+  /** Persisted safety signals from the profile (migration 0012). */
+  defaultCount?: number;
+  isFlagged?: boolean;
+  missedPayments?: number;
+  withdrawalAttempts?: number;
 }): Promise<DashboardSnapshot> {
-  const { walletAddress, activeCircles, goalCount } = input;
+  const {
+    walletAddress,
+    activeCircles,
+    goalCount,
+    defaultCount = 0,
+    isFlagged = false,
+    missedPayments = 0,
+    withdrawalAttempts = 0,
+  } = input;
 
   let walletBalance: number | null = null;
   let rpcOk = false;
@@ -111,14 +126,30 @@ export async function getDashboardSnapshot(input: {
     goalCount,
   });
 
-  // Reputation leans on reliability signals: streak, on-chain activity and how
-  // many circles the member commits to. Distinct from the coach's health score.
-  const reputationScore = Math.round(
-    100 *
-      (0.45 * clamp(streakWeeks / 8) +
-        0.3 * clamp(contributionCount / 10) +
-        0.25 * clamp(activeCircles / 3))
+  // Reputation: a neutral baseline lifted by reliability signals (streak,
+  // on-chain activity, circle commitment) and pulled down by defaults/flags, so
+  // there is one coherent score rather than a separate "positive only" number.
+  const reputationScore = computeReputationScore({
+    streakWeeks,
+    contributionCount,
+    activeCircles,
+    defaultCount,
+    isFlagged,
+  });
+
+  // On-time consistency proxy until per-round tracking lands (Phase 4):
+  // contributions made vs. contributions made + missed.
+  const consistency = consistencyRate(
+    contributionCount,
+    contributionCount + missedPayments
   );
+  const { tier: riskTier, reasons: riskReasons } = assessRisk({
+    defaultCount,
+    consistencyRate: consistency,
+    missedPayments,
+    reputationScore,
+    withdrawalAttempts,
+  });
 
   return {
     walletAddress,
@@ -132,6 +163,8 @@ export async function getDashboardSnapshot(input: {
     lastContributionAt,
     reputationScore,
     reputationLabel: reputationLabel(reputationScore),
+    riskTier,
+    riskReasons,
     coach,
     recentTransfers: transfers.slice(0, 6),
   };

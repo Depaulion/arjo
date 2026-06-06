@@ -22,6 +22,8 @@ import {
 } from "@/lib/circle";
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
+import { computeBenefits } from "@/lib/benefits";
+import { getPersistedNotifications } from "@/lib/notifications";
 import {
   type Challenge,
   type Circle,
@@ -74,6 +76,7 @@ import {
 } from "@/components/dashboard/savings-charts";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { BalanceCard } from "@/components/dashboard/home/balance-card";
+import { BenefitsDashboard } from "@/components/dashboard/benefits/benefits-dashboard";
 import {
   PrimaryGoalCard,
   PrimaryGoalEmpty,
@@ -118,6 +121,16 @@ export default async function AccountPage() {
     level: 1,
     streak_weeks: 0,
     badges: [],
+    default_count: 0,
+    last_default_date: null,
+    circle_lockout_until: null,
+    is_flagged: false,
+    default_status: "none",
+    missed_payments: 0,
+    withdrawal_attempts: 0,
+    reinstatement_circles_completed: 0,
+    ai_risk_score: "low",
+    reputation_history: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -251,11 +264,35 @@ export default async function AccountPage() {
     walletAddress: safeProfile.arc_wallet_address,
     activeCircles: myCircles.length,
     goalCount: (goals ?? []).length,
+    defaultCount: safeProfile.default_count,
+    isFlagged: safeProfile.is_flagged,
+    missedPayments: safeProfile.missed_payments,
+    withdrawalAttempts: safeProfile.withdrawal_attempts,
   });
 
   // Liquid, spendable USDC sitting in the user's wallet right now.
   const availableBalance =
     snapshot.walletBalance === null ? null : snapshot.walletBalance;
+
+  // Benefits Dashboard: aggregate realised yield, contributions and bonds from
+  // the full ledger (the 20-row feed above is only the recent activity list).
+  const { data: benefitLedger } = await supabase
+    .from("ledger_entries")
+    .select("kind, amount, status")
+    .eq("user_id", user.id)
+    .limit(1000)
+    .returns<Pick<LedgerEntry, "kind" | "amount" | "status">[]>();
+
+  const benefits = computeBenefits({
+    currency: safeProfile.preferred_stablecoin,
+    plans: allPlans,
+    ledger: benefitLedger ?? [],
+    activeCircles: activeCount,
+    xp: safeProfile.xp ?? 0,
+    level: safeProfile.level ?? 1,
+    streakWeeks: Math.max(safeProfile.streak_weeks ?? 0, snapshot.streakWeeks),
+    badges: safeProfile.badges ?? [],
+  });
 
   // --- Analytics chart data (derived, no extra queries) ---
   // Donut: held assets split between the liquid wallet and locked vaults.
@@ -316,6 +353,13 @@ export default async function AccountPage() {
   // Personalised notifications: a welcome greeting plus gentle, state-derived
   // reminders. Computed here so the bell stays a presentational client widget.
   const firstName = safeProfile.full_name?.split(" ")[0] ?? null;
+  // Durable alerts (defaults, slashed bonds, restructure votes, etc.) take
+  // priority — surface them right after the welcome greeting.
+  const persistedNotifications = await getPersistedNotifications(
+    supabase,
+    user.id
+  );
+
   const notifications: AppNotification[] = [
     {
       id: "welcome",
@@ -324,6 +368,7 @@ export default async function AccountPage() {
       icon: "welcome",
       tone: "welcome",
     },
+    ...persistedNotifications,
   ];
 
   if (!safeProfile.arc_wallet_address) {
@@ -501,6 +546,7 @@ export default async function AccountPage() {
             score={snapshot.coach.healthScore}
             label={snapshot.coach.healthLabel}
             factors={snapshot.coach.factors}
+            riskTier={snapshot.riskTier}
           />
         </section>
         }
@@ -714,6 +760,14 @@ export default async function AccountPage() {
           </Card>
         </section>
         </>
+        }
+        benefits={
+        <section id="benefits" className="scroll-mt-24">
+          <BenefitsDashboard
+            benefits={benefits}
+            currency={safeProfile.preferred_stablecoin}
+          />
+        </section>
         }
         activity={
         <>

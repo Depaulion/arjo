@@ -17,8 +17,58 @@ export type Profile = {
   level: number;
   streak_weeks: number;
   badges: string[];
+  /**
+   * Reputation & risk signals (migration 0012). SYSTEM-MANAGED — never written
+   * from a user-authenticated path; the Phase-4 defaulter flow updates these via
+   * SECURITY DEFINER functions.
+   */
+  default_count: number;
+  last_default_date: string | null;
+  circle_lockout_until: string | null;
+  is_flagged: boolean;
+  default_status: DefaultStatus;
+  missed_payments: number;
+  withdrawal_attempts: number;
+  reinstatement_circles_completed: number;
+  ai_risk_score: RiskTier;
+  reputation_history: ReputationEvent[];
   created_at: string;
   updated_at: string;
+};
+
+/** Member standing within the defaulter lifecycle (migration 0012). */
+export type DefaultStatus = "none" | "grace" | "defaulted" | "reinstating";
+
+/** Rule-based risk tier produced by lib/risk-engine.ts. */
+export type RiskTier = "low" | "medium" | "high";
+
+/** One entry in profiles.reputation_history. */
+export type ReputationEvent = {
+  event: string;
+  delta: number;
+  date: string;
+  circle_id?: string | null;
+};
+
+/** Persisted notification kinds (migration 0014). */
+export type NotificationType =
+  | "default_warning"
+  | "grace_period"
+  | "bond_slashed"
+  | "payout_delayed"
+  | "restructure_vote"
+  | "payout_protected"
+  | "reinstatement_eligible";
+
+/** A row from public.notifications. */
+export type Notification = {
+  id: string;
+  user_id: string;
+  circle_id: string | null;
+  type: NotificationType;
+  message: string;
+  read: boolean;
+  created_at: string;
 };
 
 export const CIRCLE_FREQUENCIES = [
@@ -42,11 +92,16 @@ export type Circle = {
   status: CircleStatus;
   is_public: boolean;
   description: string | null;
+  /** Refundable stake each member posts to join (migration 0013). 0 = no bond. */
+  required_bond: number;
   created_at: string;
   updated_at: string;
 };
 
 export type CircleRole = "creator" | "member";
+
+/** Lifecycle of a member's bond (migration 0013). */
+export type BondStatus = "held" | "returned" | "slashed";
 
 export type CircleMember = {
   circle_id: string;
@@ -61,6 +116,13 @@ export type CircleMember = {
   payout_tx_hash: string | null;
   /** Awaiting refund settlement after an approved exit/removal (migration 0009). */
   pending_exit: boolean;
+  /** Bond posted to join, held in the vault until completion (migration 0013). */
+  bond_amount: number;
+  bond_status: BondStatus;
+  grace_period_ends: string | null;
+  missed_contributions: number;
+  /** Per-circle defaulter standing (migration 0013). */
+  default_status: DefaultStatus;
   joined_at: string;
 };
 
@@ -70,7 +132,10 @@ export type ProposalType =
   | "PAYOUT_ORDER_CHANGE"
   | "MEMBER_EXIT_REQUEST"
   | "MEMBER_REMOVAL"
-  | "RULE_CHANGE";
+  | "RULE_CHANGE"
+  // System-generated when a member's grace period expires (migration 0016).
+  // Not user-pickable, so it is intentionally absent from PROPOSAL_TYPES.
+  | "RESTRUCTURE";
 
 export type ProposalStatus =
   | "OPEN"
@@ -223,7 +288,12 @@ export type LedgerKind =
   | "autosave"
   | "payout"
   | "penalty"
-  | "bonus";
+  | "bonus"
+  // Circle bonds (migration 0013): post on join, refund on completion,
+  // slash on default. Mirrors lib/ledger.ts.
+  | "bond"
+  | "bond_refund"
+  | "bond_slash";
 export type LedgerStatus = "pending" | "confirmed" | "failed";
 
 export type LedgerEntry = {

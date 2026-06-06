@@ -17,7 +17,12 @@ export type LedgerKind =
   | "autosave"
   | "payout"
   | "penalty"
-  | "bonus";
+  | "bonus"
+  // Circle bonds (migration 0013): post on join, refund on completion,
+  // slash on default.
+  | "bond"
+  | "bond_refund"
+  | "bond_slash";
 
 export type LedgerStatus = "pending" | "confirmed" | "failed";
 

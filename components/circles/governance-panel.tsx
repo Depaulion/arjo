@@ -1,21 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
+  Ban,
   Check,
+  Clock,
   Loader2,
   Plus,
+  RotateCcw,
   ShieldCheck,
   ThumbsDown,
   ThumbsUp,
+  Undo2,
   Vote,
   X,
 } from "lucide-react";
 
 import { shortenHex } from "@/lib/arc";
+import type { ArcStablecoin } from "@/lib/arc";
 import {
   PROPOSAL_TYPES,
   type ProposalStatus,
@@ -60,6 +66,7 @@ const TYPE_LABEL: Record<ProposalType, string> = {
   MEMBER_EXIT_REQUEST: "Exit request",
   MEMBER_REMOVAL: "Member removal",
   RULE_CHANGE: "Rule change",
+  RESTRUCTURE: "Restructure",
 };
 
 export function GovernancePanel({
@@ -69,6 +76,7 @@ export function GovernancePanel({
   proposals,
   isMember,
   isCreator,
+  currency,
 }: {
   circleId: string;
   currentUserId: string | null;
@@ -76,14 +84,40 @@ export function GovernancePanel({
   proposals: ProposalWithTally[];
   isMember: boolean;
   isCreator: boolean;
+  currency: ArcStablecoin;
 }) {
+  const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const sweptRef = useRef(false);
 
   const memberById = useMemo(() => {
     const map = new Map<string, GovMember>();
     members.forEach((m) => map.set(m.user_id, m));
     return map;
   }, [members]);
+
+  // Automated grace-expiry detection (Phase 4b): when the creator views the
+  // circle and a grace window has actually lapsed, sweep once to open the
+  // restructure vote(s), then refresh to show them. Idempotent server-side, and
+  // we only fire when something is genuinely overdue — so no needless calls.
+  useEffect(() => {
+    if (!isCreator || sweptRef.current) return;
+    const now = Date.now();
+    const hasExpired = members.some(
+      (m) =>
+        m.default_status === "grace" &&
+        m.grace_period_ends !== null &&
+        new Date(m.grace_period_ends).getTime() < now
+    );
+    if (!hasExpired) return;
+    sweptRef.current = true;
+    void fetch(`/api/circles/${circleId}/sweep-grace`, { method: "POST" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j && typeof j.opened === "number" && j.opened > 0) router.refresh();
+      })
+      .catch(() => {});
+  }, [isCreator, members, circleId, router]);
 
   return (
     <div className="space-y-6">
@@ -178,6 +212,35 @@ export function GovernancePanel({
         </CardContent>
       </Card>
 
+      {/* Creator-only: bond & defaulter resolution */}
+      {isCreator && members.some((m) => m.role !== "creator") && (
+        <Card className="border-accent/30">
+          <CardHeader>
+            <CardTitle className="text-base">Bonds &amp; defaulters</CardTitle>
+            <CardDescription>
+              Flag a missed contribution to start a grace period, slash a bond if
+              a member defaults, or return a bond when they finish in good
+              standing. Slashing applies cross-circle reputation consequences.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border">
+              {members
+                .filter((m) => m.role !== "creator")
+                .map((m) => (
+                  <MemberResolutionRow
+                    key={m.user_id}
+                    circleId={circleId}
+                    member={m}
+                    currentUserId={currentUserId}
+                    currency={currency}
+                  />
+                ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Proposals */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground">
@@ -204,6 +267,172 @@ export function GovernancePanel({
         )}
       </div>
     </div>
+  );
+}
+
+function MemberResolutionRow({
+  circleId,
+  member,
+  currentUserId,
+  currency,
+}: {
+  circleId: string;
+  member: GovMember;
+  currentUserId: string | null;
+  currency: ArcStablecoin;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<
+    "grace" | "clear" | "slash" | "return-bond" | null
+  >(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const defaulted = member.default_status === "defaulted";
+  const inGrace = member.default_status === "grace";
+  const graceExpired =
+    inGrace &&
+    member.grace_period_ends !== null &&
+    new Date(member.grace_period_ends).getTime() < Date.now();
+  const heldBond = member.bond_status === "held" && member.bond_amount > 0;
+
+  async function run(action: "grace" | "clear" | "slash" | "return-bond") {
+    if (action === "slash" && heldBond) {
+      const ok = window.confirm(
+        `Slash ${member.bond_amount} ${currency}? The bond is forfeited to the pot and the member is flagged and locked out of new circles. This can't be undone.`,
+      );
+      if (!ok) return;
+    }
+    setError(null);
+    setNotice(null);
+    setLoading(action);
+    const res = await fetch(`/api/circles/${circleId}/defaulters`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, userId: member.user_id }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setLoading(null);
+    if (!res.ok) {
+      setError(json.error ?? "That action couldn't be completed.");
+      return;
+    }
+    if (action === "grace") setNotice("Grace period started — member notified.");
+    else if (action === "clear") setNotice("Default cleared — back in good standing.");
+    else if (action === "slash")
+      setNotice(`Bond slashed (${json.slashed ?? 0} ${currency}). Consequences applied.`);
+    else setNotice(`Bond returned (${json.amount ?? 0} ${currency}).`);
+    router.refresh();
+  }
+
+  const statusBadge = defaulted ? (
+    <Badge variant="outline" className="border-destructive/40 text-destructive">
+      Defaulted
+    </Badge>
+  ) : graceExpired ? (
+    <Badge variant="outline" className="border-destructive/40 text-destructive">
+      <AlertTriangle className="mr-1 h-3 w-3" />
+      Grace expired · restructure vote open
+    </Badge>
+  ) : inGrace ? (
+    <Badge variant="outline" className="border-amber-500/40 text-amber-500">
+      <Clock className="mr-1 h-3 w-3" />
+      Grace
+      {member.grace_period_ends
+        ? ` · ends ${new Date(member.grace_period_ends).toLocaleDateString()}`
+        : ""}
+    </Badge>
+  ) : member.bond_status === "returned" ? (
+    <Badge variant="outline">Bond returned</Badge>
+  ) : member.bond_status === "slashed" ? (
+    <Badge variant="outline" className="border-destructive/40 text-destructive">
+      Bond slashed
+    </Badge>
+  ) : (
+    <Badge variant="outline">Good standing</Badge>
+  );
+
+  return (
+    <li className="space-y-2 py-3 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">
+            {memberLabel(member, currentUserId)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Bond: {member.bond_amount} {currency}
+          </p>
+        </div>
+        {statusBadge}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {!defaulted && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => run("grace")}
+            disabled={loading !== null}
+          >
+            {loading === "grace" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            {inGrace ? "Extend grace" : "Flag missed"}
+          </Button>
+        )}
+        {inGrace && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => run("clear")}
+            disabled={loading !== null}
+          >
+            {loading === "clear" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
+            Clear default
+          </Button>
+        )}
+        {!defaulted && heldBond && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10"
+            onClick={() => run("slash")}
+            disabled={loading !== null}
+          >
+            {loading === "slash" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Ban className="h-4 w-4" />
+            )}
+            Slash bond
+          </Button>
+        )}
+        {!defaulted && heldBond && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => run("return-bond")}
+            disabled={loading !== null}
+          >
+            {loading === "return-bond" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Undo2 className="h-4 w-4" />
+            )}
+            Return bond
+          </Button>
+        )}
+      </div>
+
+      {notice && <p className="text-xs text-primary">{notice}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </li>
   );
 }
 

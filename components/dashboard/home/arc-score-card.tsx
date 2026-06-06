@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { ChevronDown, ShieldCheck } from "lucide-react";
 
+import { RISK_BADGES } from "@/lib/risk-engine";
+import type { RiskTier } from "@/lib/types";
+
 type Factor = { label: string; value: number };
+
+const RISK_BADGE_CLASS: Record<RiskTier, string> = {
+  low: "bg-emerald-500/15 text-emerald-500",
+  medium: "bg-amber-500/15 text-amber-500",
+  high: "bg-red-500/15 text-red-500",
+};
 
 /**
  * A single, consolidated reputation number — the Arc Score /100 — replacing the
@@ -14,6 +23,7 @@ export function ArcScoreCard({
   score,
   label,
   factors,
+  riskTier,
 }: {
   score: number;
   label: string;
@@ -24,8 +34,11 @@ export function ArcScoreCard({
     engagement: number;
     funded: number;
   };
+  /** Rule-based risk tier (migration 0012); shows a coloured trust badge. */
+  riskTier?: RiskTier;
 }) {
   const [open, setOpen] = useState(false);
+  const badge = riskTier ? RISK_BADGES[riskTier] : null;
   const r = 34;
   const c = 2 * Math.PI * r;
   const dash = (Math.min(100, Math.max(0, score)) / 100) * c;
@@ -77,6 +90,13 @@ export function ArcScoreCard({
           <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             Arc Score
+            {badge && (
+              <span
+                className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal ${RISK_BADGE_CLASS[riskTier as RiskTier]}`}
+              >
+                {badge.label}
+              </span>
+            )}
           </p>
           <p className="mt-0.5 text-lg font-semibold">{label}</p>
           <p className="text-xs text-muted-foreground">

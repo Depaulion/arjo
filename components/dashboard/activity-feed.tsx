@@ -81,9 +81,24 @@ const KIND_META: Record<
     outgoing: true,
   },
   bonus: {
-    label: "Yield bonus",
+    label: "USYC yield",
     icon: <Gift className="h-4 w-4" />,
     outgoing: false,
+  },
+  bond: {
+    label: "Bond posted",
+    icon: <Lock className="h-4 w-4" />,
+    outgoing: true,
+  },
+  bond_refund: {
+    label: "Bond refunded",
+    icon: <ArrowDownLeft className="h-4 w-4" />,
+    outgoing: false,
+  },
+  bond_slash: {
+    label: "Bond slashed",
+    icon: <TriangleAlert className="h-4 w-4" />,
+    outgoing: true,
   },
 };
 
