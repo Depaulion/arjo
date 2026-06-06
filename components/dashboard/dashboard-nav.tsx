@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Plus,
+  ShieldCheck,
   Vault,
   Wallet,
   X,
@@ -42,9 +43,11 @@ const itemClass =
 export function DashboardNav({
   walletAddress = null,
   currency = "USDC",
+  isAdmin = false,
 }: {
   walletAddress?: string | null;
   currency?: string;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -202,6 +205,16 @@ export function DashboardNav({
               <LifeBuoy className="h-4 w-4" />
               Help &amp; support
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/support"
+                onClick={() => setOpen(false)}
+                className={`${itemClass} text-foreground`}
+              >
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Support inbox
+              </Link>
+            )}
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

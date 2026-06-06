@@ -10,6 +10,8 @@ export type Profile = {
   circle_wallet_id: string | null;
   wallet_blockchain: string;
   preferred_stablecoin: ArcStablecoin;
+  /** Can read and triage all support tickets (migration 0011). */
+  is_admin: boolean;
   /** Gamification counters (migration 0005). */
   xp: number;
   level: number;

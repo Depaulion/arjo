@@ -113,6 +113,7 @@ export default async function AccountPage() {
     circle_wallet_id: null,
     wallet_blockchain: "ARC-TESTNET",
     preferred_stablecoin: "USDC",
+    is_admin: false,
     xp: 0,
     level: 1,
     streak_weeks: 0,
@@ -433,6 +434,7 @@ export default async function AccountPage() {
             <DashboardNav
               walletAddress={safeProfile.arc_wallet_address}
               currency={safeProfile.preferred_stablecoin}
+              isAdmin={safeProfile.is_admin}
             />
           </div>
         </div>
