@@ -57,6 +57,7 @@ export async function POST(request: Request) {
   const autoAmount = body.autoAmount != null ? Number(body.autoAmount) : null;
   const targetAmount =
     body.targetAmount != null ? Number(body.targetAmount) : null;
+  const goalId = body.goalId ? String(body.goalId) : null;
 
   if (name.length < 2 || name.length > 80) {
     return NextResponse.json(
@@ -93,6 +94,25 @@ export async function POST(request: Request) {
     );
   }
 
+  // If a goal was named, confirm it belongs to this user before linking (the
+  // FK + RLS would also reject a foreign id, but we fail fast with a clear msg).
+  let linkedGoalId: string | null = null;
+  if (goalId) {
+    const { data: goal } = await supabase
+      .from("savings_goals")
+      .select("id")
+      .eq("id", goalId)
+      .eq("user_id", user.id)
+      .maybeSingle<{ id: string }>();
+    if (!goal) {
+      return NextResponse.json(
+        { error: "That goal could not be found." },
+        { status: 400 }
+      );
+    }
+    linkedGoalId = goal.id;
+  }
+
   const wallet = await getUserWallet(supabase, user.id);
   const currency = wallet.currency;
 
@@ -126,6 +146,7 @@ export async function POST(request: Request) {
       apy_bonus: APY_BONUS[planType],
       status: "active",
       vault_address: vaultAddress,
+      goal_id: linkedGoalId,
     })
     .select("*")
     .single<SavingsPlan>();

@@ -6,12 +6,9 @@ import { CalendarDays, Loader2, Plus, Sparkles, Target, Trash2 } from "lucide-re
 
 import { createClient } from "@/lib/supabase/client";
 import { ARC_STABLECOINS, type ArcStablecoin } from "@/lib/arc";
-import type { SavingsGoal } from "@/lib/types";
-import {
-  USYC_BASE_APY,
-  daysBetween,
-  projectYield,
-} from "@/lib/yield-engine";
+import type { SavingsGoal, SavingsPlan } from "@/lib/types";
+import { USYC_BASE_APY, daysBetween, projectYield } from "@/lib/yield-engine";
+import { goalFunding } from "@/lib/goals";
 import { goalEmoji } from "@/components/dashboard/home/primary-goal-card";
 import { Button } from "@/components/ui/button";
 
@@ -51,18 +48,23 @@ function estimateCompletion(
  * The Goals tab: an aggregate progress hero plus a card per goal (with a
  * friendly category emoji and projected finish), and an inline create form.
  *
- * Progress uses the liquid wallet balance against each goal's target — the same
- * basis as the Home "current goal" card — so figures line up across the app.
+ * Progress is the REAL money set aside for each goal — the principal (plus
+ * accrued USYC yield) of the SafeLock / savings vaults linked to it — not the
+ * user's whole liquid wallet. A goal therefore only advances once funds are
+ * genuinely committed to it, and grows as that money earns yield.
  */
 export function GoalsView({
   userId,
   goals,
+  plans = [],
   balance,
   weeklyRate,
 }: {
   userId: string;
   goals: SavingsGoal[];
-  /** Current saved amount used to compute progress. */
+  /** Savings plans; those linked to a goal fund its progress. */
+  plans?: SavingsPlan[];
+  /** Liquid wallet balance (shown as "available to allocate"). */
   balance: number;
   /** Projected USDC saved per week, from the coach. */
   weeklyRate: number;
@@ -81,18 +83,22 @@ export function GoalsView({
 
   const summary = useMemo(() => {
     const totalTarget = goals.reduce((s, g) => s + g.target_amount, 0);
-    // Saved counted per goal, capped at each target (you can't be >100% funded).
-    const totalSaved = goals.reduce(
-      (s, g) => s + Math.min(balance, g.target_amount),
-      0
-    );
-    const reached = goals.filter((g) => balance >= g.target_amount).length;
+    // Funded per goal = real linked-vault money, capped at each target.
+    let totalSaved = 0;
+    let totalEarned = 0;
+    let reached = 0;
+    for (const g of goals) {
+      const { funded, earned } = goalFunding(g.id, plans);
+      totalSaved += Math.min(funded, g.target_amount);
+      totalEarned += earned;
+      if (funded >= g.target_amount) reached += 1;
+    }
     const pct =
       totalTarget > 0
         ? Math.min(100, Math.round((totalSaved / totalTarget) * 100))
         : 0;
-    return { totalTarget, totalSaved, reached, pct };
-  }, [goals, balance]);
+    return { totalTarget, totalSaved, totalEarned, reached, pct };
+  }, [goals, plans]);
 
   async function createGoal(e: React.FormEvent) {
     e.preventDefault();
@@ -185,10 +191,16 @@ export function GoalsView({
               style={{ width: `${summary.pct}%` }}
             />
           </div>
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
             Tracking {goals.length} goal{goals.length === 1 ? "" : "s"}
             {summary.reached > 0 && ` · ${summary.reached} reached`}
+            {summary.totalEarned > 0 && (
+              <span className="font-semibold text-emerald-500">
+                · +{fmt(summary.totalEarned)} USDC yield earned
+              </span>
+            )}
+            <span>· {fmt(balance)} USDC available to allocate</span>
           </p>
           <p className="mt-2 text-xs text-emerald-500">
             Fund a goal with a SafeLock to earn up to 8% APY, Treasury-backed by
@@ -301,20 +313,21 @@ export function GoalsView({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {goals.map((goal) => {
+            // Real money committed to this goal (linked vault principal + yield).
+            const { funded, earned, count } = goalFunding(goal.id, plans);
             const pct = Math.min(
               100,
-              Math.round((balance / goal.target_amount) * 100)
+              Math.round((funded / goal.target_amount) * 100)
             );
-            const remaining = Math.max(0, goal.target_amount - balance);
+            const remaining = Math.max(0, goal.target_amount - funded);
             const done = remaining <= 0;
-            // What this goal's target would earn if funded in a SafeLock until
-            // its target date (daily-compounded USYC). Shows goals as real,
-            // yield-earning savings rather than passive trackers.
+            // What locking the remaining amount in a SafeLock until the target
+            // date would earn (daily-compounded USYC) — the incentive to fund.
             const lockDays = goal.target_date
               ? daysBetween(new Date(), goal.target_date)
               : 365;
             const projectedYield = projectYield({
-              principal: goal.target_amount,
+              principal: remaining,
               days: lockDays,
               apy: GOAL_LOCK_APY,
             });
@@ -331,7 +344,7 @@ export function GoalsView({
                     <div>
                       <p className="font-semibold leading-tight">{goal.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {fmt(Math.min(balance, goal.target_amount))} /{" "}
+                        {fmt(Math.min(funded, goal.target_amount))} /{" "}
                         {fmt(goal.target_amount)} {goal.currency}
                       </p>
                     </div>
@@ -371,10 +384,27 @@ export function GoalsView({
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {estimateCompletion(remaining, weeklyRate, goal.target_date)}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {estimateCompletion(remaining, weeklyRate, goal.target_date)}
+                  </span>
+                  {count > 0 ? (
+                    <span>
+                      Funded by {count} vault{count === 1 ? "" : "s"}
+                      {earned > 0 && (
+                        <>
+                          {" · "}
+                          <span className="font-semibold text-emerald-500">
+                            +{fmt(earned)} {goal.currency} yield
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  ) : (
+                    <span>Not funded yet</span>
+                  )}
+                </div>
 
                 {!done && projectedYield > 0 && (
                   <a
@@ -382,7 +412,7 @@ export function GoalsView({
                     className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 transition-colors hover:bg-emerald-500/10"
                   >
                     <span className="text-xs leading-tight text-muted-foreground">
-                      Lock in a SafeLock and earn{" "}
+                      {count > 0 ? "Lock the rest" : "Open a SafeLock"} and earn{" "}
                       <span className="font-semibold text-emerald-500">
                         +{fmt(projectedYield)} {goal.currency}
                       </span>{" "}

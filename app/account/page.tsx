@@ -23,6 +23,7 @@ import {
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { computeBenefits } from "@/lib/benefits";
+import { goalFunding } from "@/lib/goals";
 import { isUsycEnabled } from "@/lib/usyc";
 import { getPersistedNotifications } from "@/lib/notifications";
 import {
@@ -346,6 +347,11 @@ export default async function AccountPage() {
 
   // The user's primary goal (most recent) drives the "Current goal" card.
   const primaryGoal = (goals ?? [])[0] ?? null;
+  // Real money committed to it = principal + accrued yield of its linked vaults
+  // (not the liquid wallet balance), so the card never overstates progress.
+  const primaryGoalFunded = primaryGoal
+    ? goalFunding(primaryGoal.id, allPlans).funded
+    : 0;
 
   // Time-of-day greeting (server time).
   const hour = new Date().getHours();
@@ -528,7 +534,7 @@ export default async function AccountPage() {
           {primaryGoal ? (
             <PrimaryGoalCard
               name={primaryGoal.name}
-              saved={Math.min(availableBalance ?? 0, primaryGoal.target_amount)}
+              saved={Math.min(primaryGoalFunded, primaryGoal.target_amount)}
               target={primaryGoal.target_amount}
               targetDate={primaryGoal.target_date}
               currency={primaryGoal.currency}
@@ -557,6 +563,7 @@ export default async function AccountPage() {
           <GoalsView
             userId={user.id}
             goals={goals ?? []}
+            plans={allPlans}
             balance={snapshot.walletBalance ?? 0}
             weeklyRate={snapshot.coach.weeklyProjection}
           />
@@ -648,7 +655,11 @@ export default async function AccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <SavingsPlans plans={allPlans} onChainEnabled={onChainEnabled} />
+              <SavingsPlans
+                plans={allPlans}
+                goals={goals ?? []}
+                onChainEnabled={onChainEnabled}
+              />
             </CardContent>
           </Card>
 

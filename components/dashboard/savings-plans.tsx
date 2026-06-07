@@ -15,6 +15,7 @@ import {
 import { ARC_STABLECOINS, type ArcStablecoin } from "@/lib/arc";
 import type {
   AutoCadence,
+  SavingsGoal,
   SavingsPlan,
   SavingsPlanType,
 } from "@/lib/types";
@@ -80,9 +81,12 @@ const PLAN_META: Record<
 
 export function SavingsPlans({
   plans,
+  goals = [],
   onChainEnabled,
 }: {
   plans: SavingsPlan[];
+  /** The user's goals — a new plan can be tagged to fund one. */
+  goals?: SavingsGoal[];
   /** True when Circle wallets are configured + the user has a wallet. */
   onChainEnabled: boolean;
 }) {
@@ -97,6 +101,7 @@ export function SavingsPlans({
   const [targetAmount, setTargetAmount] = useState("");
   const [autoCadence, setAutoCadence] = useState<AutoCadence>("weekly");
   const [autoAmount, setAutoAmount] = useState("");
+  const [goalId, setGoalId] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -127,6 +132,7 @@ export function SavingsPlans({
           planType === "target" && targetAmount ? Number(targetAmount) : null,
         autoCadence: planType === "auto" ? autoCadence : null,
         autoAmount: planType === "auto" ? Number(autoAmount) : null,
+        goalId: goalId || null,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -149,6 +155,7 @@ export function SavingsPlans({
     setLockUntil("");
     setTargetAmount("");
     setAutoAmount("");
+    setGoalId("");
     setAdding(false);
     router.refresh();
   }
@@ -419,6 +426,34 @@ export function SavingsPlans({
               className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+
+          {goals.length > 0 && (
+            <div className="space-y-1.5">
+              <label htmlFor="plan-goal" className="text-sm font-medium">
+                Fund a goal{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </label>
+              <select
+                id="plan-goal"
+                value={goalId}
+                onChange={(e) => setGoalId(e.target.value)}
+                className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">No goal — just save</option>
+                {goals.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name} · target {fmt(g.target_amount)} {g.currency}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                Tagging a goal counts this vault toward it, so progress reflects
+                money actually set aside and earning yield.
+              </p>
+            </div>
+          )}
 
           {planType === "auto" ? (
             <div className="grid gap-3 sm:grid-cols-3">

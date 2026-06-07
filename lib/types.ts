@@ -277,6 +277,8 @@ export type SavingsPlan = {
   apy_bonus: number;
   status: SavingsPlanStatus;
   vault_address: string | null;
+  /** Optional goal this plan funds (migration 0017). */
+  goal_id: string | null;
   created_at: string;
   updated_at: string;
 };
