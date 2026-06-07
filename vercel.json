@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/circle-rounds",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

@@ -29,6 +29,7 @@ import { getGovernanceData, type GovernanceData } from "@/lib/governance";
 import { CircleInsights } from "@/components/circles/circle-insights";
 import { CircleTabs } from "@/components/circles/circle-tabs";
 import { ContributeButton } from "@/components/circles/contribute-button";
+import { AutoDebitToggle } from "@/components/circles/auto-debit-toggle";
 import { GovernancePanel } from "@/components/circles/governance-panel";
 import { PayoutButton } from "@/components/circles/payout-button";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +130,8 @@ export default async function CircleDashboardPage({
   let isCreator = false;
   let userId: string | null = null;
   let governance: GovernanceData | null = null;
+  let isMember = false;
+  let myAutoDebit = false;
   if (isRealCircle) {
     try {
       const supabase = createClient();
@@ -143,6 +146,16 @@ export default async function CircleDashboardPage({
           .eq("id", params.id)
           .single<{ created_by: string }>();
         isCreator = row?.created_by === user.id;
+
+        // The viewer's own membership drives the auto-debit opt-in control.
+        const { data: myMember } = await supabase
+          .from("circle_members")
+          .select("auto_debit")
+          .eq("circle_id", params.id)
+          .eq("user_id", user.id)
+          .maybeSingle<{ auto_debit: boolean }>();
+        isMember = Boolean(myMember);
+        myAutoDebit = myMember?.auto_debit ?? false;
       }
       governance = await getGovernanceData(supabase, params.id, userId);
     } catch {
@@ -219,6 +232,13 @@ export default async function CircleDashboardPage({
             defaultAmount={data.contributionAmount}
             currency={data.currency}
           />
+          {/* Members can opt into automatic per-round contributions. */}
+          {isMember && (
+            <AutoDebitToggle
+              circleId={params.id}
+              initialEnabled={myAutoDebit}
+            />
+          )}
           {/* The rotating payout — the defining Ajo action, creator only. */}
           {isCreator && (
             <PayoutButton

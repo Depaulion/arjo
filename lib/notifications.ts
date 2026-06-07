@@ -23,6 +23,9 @@ const META: Record<
   restructure_vote: { title: "Circle restructure vote", icon: "vote", tone: "reminder" },
   payout_protected: { title: "Your payout is protected", icon: "shield", tone: "info" },
   reinstatement_eligible: { title: "You can rejoin circles", icon: "gift", tone: "info" },
+  auto_debit_upcoming: { title: "Auto-debit upcoming", icon: "sync", tone: "reminder" },
+  auto_debit_paid: { title: "Contribution auto-paid", icon: "wallet", tone: "info" },
+  auto_debit_failed: { title: "Auto-debit couldn't run", icon: "alert", tone: "alert" },
 };
 
 /** Map a stored notification row to the bell's presentational shape. */

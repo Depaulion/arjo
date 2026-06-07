@@ -50,7 +50,7 @@ export type ReputationEvent = {
   circle_id?: string | null;
 };
 
-/** Persisted notification kinds (migration 0014). */
+/** Persisted notification kinds (migration 0014; auto-debit added 0021). */
 export type NotificationType =
   | "default_warning"
   | "grace_period"
@@ -58,7 +58,11 @@ export type NotificationType =
   | "payout_delayed"
   | "restructure_vote"
   | "payout_protected"
-  | "reinstatement_eligible";
+  | "reinstatement_eligible"
+  // Circle auto-debit lifecycle (migration 0021).
+  | "auto_debit_upcoming"
+  | "auto_debit_paid"
+  | "auto_debit_failed";
 
 /** A row from public.notifications. */
 export type Notification = {
@@ -131,6 +135,8 @@ export type CircleMember = {
   missed_contributions: number;
   /** Per-circle defaulter standing (migration 0013). */
   default_status: DefaultStatus;
+  /** Opted in to automatic per-round contribution pulls (migration 0021). */
+  auto_debit: boolean;
   joined_at: string;
 };
 
