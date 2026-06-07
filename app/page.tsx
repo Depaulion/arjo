@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/sections/navbar";
 import { Hero } from "@/components/sections/hero";
+import { TrustBar } from "@/components/sections/trust-bar";
 import { Features } from "@/components/sections/features";
 import { HowItWorks } from "@/components/sections/how-it-works";
 import { CTA } from "@/components/sections/cta";
@@ -11,6 +12,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <TrustBar />
         <Features />
         <HowItWorks />
         <CTA />
