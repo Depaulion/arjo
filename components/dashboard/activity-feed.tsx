@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Repeat,
   TriangleAlert,
+  X,
 } from "lucide-react";
 
 import { arcTxUrl, shortenHex } from "@/lib/arc";
@@ -134,6 +135,23 @@ export function ActivityFeed({
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+
+  async function cancelOffRamp(id: string) {
+    setCancelling(id);
+    setNotice(null);
+    const res = await fetch(`/api/ramp/offramp/${id}/cancel`, {
+      method: "POST",
+    });
+    const json = await res.json().catch(() => ({}));
+    setCancelling(null);
+    if (res.ok) {
+      setNotice("Off-ramp request cancelled.");
+      router.refresh();
+    } else {
+      setNotice(json.error ?? "Could not cancel this request.");
+    }
+  }
 
   // Entries arrive newest-first; bucket them into ordered day groups.
   const groups = useMemo(() => {
@@ -218,6 +236,13 @@ export function ActivityFeed({
               {rows.map((e) => {
                 const meta = KIND_META[e.kind];
                 const status = STATUS_META[e.status];
+                // A pending off-ramp request: a withdraw with no on-chain
+                // footprint, so it will never auto-settle and can be cancelled.
+                const cancellable =
+                  e.status === "pending" &&
+                  e.kind === "withdraw" &&
+                  !e.tx_hash &&
+                  !e.circle_tx_id;
                 return (
                   <li
                     key={e.id}
@@ -273,6 +298,21 @@ export function ActivityFeed({
                         {status.icon}
                         {status.label}
                       </span>
+                      {cancellable && (
+                        <button
+                          type="button"
+                          onClick={() => cancelOffRamp(e.id)}
+                          disabled={cancelling === e.id}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground transition-colors hover:text-destructive disabled:opacity-60"
+                        >
+                          {cancelling === e.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </li>
                 );
