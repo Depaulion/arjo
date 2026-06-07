@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowRight, Plus, Target } from "lucide-react";
 
 function fmt(n: number) {
@@ -90,14 +89,14 @@ export function PrimaryGoalCard({
         </p>
       </div>
 
-      <Link
+      <a
         href="#save"
         className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Plus className="h-4 w-4" />
         Continue saving
         <ArrowRight className="h-4 w-4" />
-      </Link>
+      </a>
     </div>
   );
 }
@@ -114,13 +113,13 @@ export function PrimaryGoalEmpty() {
         Name what you&apos;re saving for and we&apos;ll track your progress and
         forecast your finish date.
       </p>
-      <Link
+      <a
         href="#goals"
         className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Plus className="h-4 w-4" />
         Create a goal
-      </Link>
+      </a>
     </div>
   );
 }

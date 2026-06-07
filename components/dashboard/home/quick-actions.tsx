@@ -43,24 +43,37 @@ const TONES: Record<Action["tone"], string> = {
 
 /** A 4-up grid of the most common next actions, thumb-friendly on mobile. */
 export function QuickActions() {
+  const cls =
+    "flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-3 text-center shadow-sm transition-colors hover:border-primary/40";
   return (
     <div className="grid grid-cols-4 gap-3">
-      {ACTIONS.map((a) => (
-        <Link
-          key={a.label}
-          href={a.href}
-          className="flex flex-col items-center gap-2 rounded-2xl border border-border/60 bg-card p-3 text-center shadow-sm transition-colors hover:border-primary/40"
-        >
-          <span
-            className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-              TONES[a.tone]
-            }`}
-          >
-            {a.icon}
-          </span>
-          <span className="text-xs font-medium leading-tight">{a.label}</span>
-        </Link>
-      ))}
+      {ACTIONS.map((a) => {
+        const inner = (
+          <>
+            <span
+              className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                TONES[a.tone]
+              }`}
+            >
+              {a.icon}
+            </span>
+            <span className="text-xs font-medium leading-tight">{a.label}</span>
+          </>
+        );
+        // In-page tab anchors (#save, #community) must be native <a> so the
+        // browser fires `hashchange` — Next's <Link> navigates via pushState,
+        // which the DashboardTabs hash listener never sees. Real routes keep
+        // <Link> for client-side navigation.
+        return a.href.startsWith("#") ? (
+          <a key={a.label} href={a.href} className={cls}>
+            {inner}
+          </a>
+        ) : (
+          <Link key={a.label} href={a.href} className={cls}>
+            {inner}
+          </Link>
+        );
+      })}
     </div>
   );
 }

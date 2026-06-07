@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 function fmt(n: number) {
@@ -46,13 +45,13 @@ export function AICoachTip({
       <p className="mt-3 text-[15px] font-medium leading-relaxed">{headline}</p>
       <p className="mt-1.5 text-sm text-muted-foreground">{recommendation}</p>
 
-      <Link
+      <a
         href="#save"
         className="mt-4 inline-flex items-center gap-1.5 rounded-2xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
       >
         Save now
         <ArrowRight className="h-4 w-4" />
-      </Link>
+      </a>
       {weeklyProjection > 0 && (
         <p className="mt-3 text-xs text-muted-foreground">
           At your current pace that&apos;s ~{fmt(weeklyProjection)} {currency} a
