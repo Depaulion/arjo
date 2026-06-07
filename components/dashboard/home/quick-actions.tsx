@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownToLine, Plus, Users, Vault } from "lucide-react";
+import { ArrowDownToLine, Plus, RefreshCw, Users } from "lucide-react";
 
 type Action = {
   label: string;
@@ -16,15 +16,15 @@ const ACTIONS: Action[] = [
     tone: "primary",
   },
   {
+    label: "Add money",
+    href: "/account/ramp",
+    icon: <RefreshCw className="h-5 w-5" />,
+    tone: "accent",
+  },
+  {
     label: "Withdraw",
     href: "/account/withdraw",
     icon: <ArrowDownToLine className="h-5 w-5" />,
-    tone: "neutral",
-  },
-  {
-    label: "Vaults",
-    href: "#save",
-    icon: <Vault className="h-5 w-5" />,
     tone: "neutral",
   },
   {
