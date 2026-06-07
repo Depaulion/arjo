@@ -1,12 +1,4 @@
 import Image from "next/image";
-import { CircleDollarSign, RefreshCw, type LucideIcon } from "lucide-react";
-
-type Partner = {
-  name: string;
-  tint: string;
-  logo?: string;
-  icon?: LucideIcon;
-};
 
 /**
  * "Built on Arc" trust strip — a slim credibility band placed directly under the
@@ -15,18 +7,46 @@ type Partner = {
  * the value props live in <Features /> and <HowItWorks /> below, so this never
  * duplicates them.
  *
- * Arc uses the official brand mark (drop the file at public/brand/arc-logo.png).
- * Circle and USDC are rendered as styled icon wordmarks from the app's own design
- * tokens — swap in their official SVGs here later if/when they're available.
+ * All three use their official brand marks. Drop the files at:
+ *   public/brand/arc-logo.png    (icon-only mark — we render "Arc" beside it)
+ *   public/brand/circle-logo.png (full lockup — already includes the name)
+ *   public/brand/usdc-logo.png   (full lockup — already includes the name)
+ * The intrinsic width/height below just set each image's aspect ratio so it's
+ * displayed at a uniform 24px height without distortion.
  */
-const PARTNERS = [
+type Partner = {
+  name: string;
+  logo: string;
+  width: number;
+  height: number;
+  /** true when the logo image already contains the brand name (a lockup). */
+  lockup?: boolean;
+  /** extra classes for the <Image> (e.g. rounding for the square Arc tile). */
+  imgClassName?: string;
+};
+
+const PARTNERS: Partner[] = [
   {
     name: "Arc",
     logo: "/brand/arc-logo.png",
-    tint: "text-primary",
+    width: 24,
+    height: 24,
+    imgClassName: "rounded-md",
   },
-  { name: "Circle", icon: RefreshCw, tint: "text-accent" },
-  { name: "USDC", icon: CircleDollarSign, tint: "text-sky-400" },
+  {
+    name: "Circle",
+    logo: "/brand/circle-logo.png",
+    width: 96,
+    height: 24,
+    lockup: true,
+  },
+  {
+    name: "USDC",
+    logo: "/brand/usdc-logo.png",
+    width: 78,
+    height: 24,
+    lockup: true,
+  },
 ];
 
 const PILLS = [
@@ -49,18 +69,14 @@ export function TrustBar() {
                 key={p.name}
                 className="flex items-center gap-2 text-base font-bold tracking-tight"
               >
-                {p.logo ? (
-                  <Image
-                    src={p.logo}
-                    alt={`${p.name} logo`}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 rounded-md"
-                  />
-                ) : (
-                  p.icon && <p.icon className={`h-5 w-5 ${p.tint}`} />
-                )}
-                {p.name}
+                <Image
+                  src={p.logo}
+                  alt={`${p.name} logo`}
+                  width={p.width}
+                  height={p.height}
+                  className={`h-6 w-auto object-contain ${p.imgClassName ?? ""}`}
+                />
+                {!p.lockup && p.name}
               </span>
             ))}
           </div>
