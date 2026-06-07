@@ -178,6 +178,30 @@ export function SavingsPlans({
     router.refresh();
   }
 
+  async function assignGoal(id: string, newGoalId: string) {
+    setError(null);
+    setNotice(null);
+    setBusyId(id);
+    const res = await fetch(`/api/savings/${id}/goal`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ goalId: newGoalId || null }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusyId(null);
+    if (!res.ok) {
+      setError(json.error ?? "Could not update the goal link.");
+      return;
+    }
+    const goalName = goals.find((g) => g.id === newGoalId)?.name;
+    setNotice(
+      newGoalId
+        ? `Vault now funds "${goalName}".`
+        : "Vault unlinked from its goal."
+    );
+    router.refresh();
+  }
+
   async function runNow(id: string) {
     setBusyId(id);
     setError(null);
@@ -356,6 +380,29 @@ export function SavingsPlans({
                     </span>
                   )}
                 </div>
+
+                {goals.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <label htmlFor={`goal-${p.id}`} className="sr-only">
+                      Fund a goal
+                    </label>
+                    <select
+                      id={`goal-${p.id}`}
+                      value={p.goal_id ?? ""}
+                      disabled={busyId === p.id}
+                      onChange={(e) => assignGoal(p.id, e.target.value)}
+                      className="h-8 flex-1 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                    >
+                      <option value="">Not funding a goal</option>
+                      {goals.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          Funds: {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </li>
             );
           })}
