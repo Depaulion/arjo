@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Loader2, Plus, Sparkles, Target, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Loader2,
+  Plus,
+  Sparkles,
+  Target,
+  Trash2,
+  Vault,
+} from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { ARC_STABLECOINS, type ArcStablecoin } from "@/lib/arc";
@@ -315,6 +323,11 @@ export function GoalsView({
           {goals.map((goal) => {
             // Real money committed to this goal (linked vault principal + yield).
             const { funded, earned, count } = goalFunding(goal.id, plans);
+            // The actual vaults funding it — shown so the goal feels like a
+            // real, backed savings bucket rather than a number.
+            const linkedPlans = plans.filter(
+              (p) => p.goal_id === goal.id && p.status === "active"
+            );
             const pct = Math.min(
               100,
               Math.round((funded / goal.target_amount) * 100)
@@ -405,6 +418,39 @@ export function GoalsView({
                     <span>Not funded yet</span>
                   )}
                 </div>
+
+                {linkedPlans.length > 0 && (
+                  <ul className="mt-3 space-y-1.5 border-t border-border/60 pt-3">
+                    {linkedPlans.map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex items-center justify-between gap-2 text-xs"
+                      >
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <Vault className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="truncate font-medium">{p.name}</span>
+                          {p.apy_bonus > 0 && (
+                            <span className="shrink-0 rounded-full bg-emerald-500/15 px-1.5 text-[10px] font-semibold text-emerald-500">
+                              {p.apy_bonus}%
+                            </span>
+                          )}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {fmt(p.principal)} {p.currency}
+                          {p.plan_type === "locked" && p.lock_until && (
+                            <>
+                              {" · "}
+                              {new Date(p.lock_until).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 {!done && projectedYield > 0 && (
                   <a
