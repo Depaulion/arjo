@@ -218,6 +218,12 @@ export async function POST(
           .update({ status: "active" })
           .eq("id", circle.id);
       }
+
+      // This payout closes the current rotation round — open the next one and
+      // reset the due date (migration 0020). No-op at the final round.
+      if (remainingAfter > 0) {
+        await supabase.rpc("advance_circle_round", { p_circle_id: circle.id });
+      }
     } catch (err) {
       pending = true;
       await settleLedgerEntry(supabase, ledger.id, {

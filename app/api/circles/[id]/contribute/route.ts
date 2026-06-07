@@ -109,6 +109,27 @@ export async function POST(
     pending = true;
   }
 
+  // Record that this member paid the current rotation round (migration 0020).
+  // Best-effort and idempotent: a second contribution in the same round keeps
+  // the first row, and a failure here must never fail the contribution itself.
+  try {
+    await supabase
+      .from("circle_round_contributions")
+      .upsert(
+        {
+          circle_id: circle.id,
+          round_number: circle.current_round ?? 1,
+          user_id: user.id,
+          ledger_id: ledger.id,
+          amount,
+          status: "paid",
+        },
+        { onConflict: "circle_id,round_number,user_id", ignoreDuplicates: true }
+      );
+  } catch {
+    // ignore — round tracking is non-critical to the money movement
+  }
+
   const gamification = await applyGamification(supabase, user.id, "contribution");
 
   // Lightweight per-circle reputation: +5 for contributing. Best-effort — never

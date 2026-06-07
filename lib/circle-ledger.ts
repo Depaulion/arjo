@@ -20,6 +20,9 @@ export type CircleLedgerInput = {
   contributionAmount?: number | null;
   frequency?: CircleFrequency | null;
   memberCount?: number | null;
+  currentRound?: number | null;
+  totalRounds?: number | null;
+  roundDueAt?: string | null;
 };
 
 function emptyLedger(input: CircleLedgerInput): CircleLedger {
@@ -43,6 +46,9 @@ function emptyLedger(input: CircleLedgerInput): CircleLedger {
     contributionAmount: input.contributionAmount ?? null,
     frequency: input.frequency ?? null,
     memberCount: input.memberCount ?? null,
+    currentRound: input.currentRound ?? null,
+    totalRounds: input.totalRounds ?? null,
+    roundDueAt: input.roundDueAt ?? null,
   };
 }
 

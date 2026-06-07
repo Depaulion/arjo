@@ -97,6 +97,9 @@ async function resolveCircle(id: string): Promise<CircleLedgerInput> {
         contributionAmount: circle.contribution_amount,
         frequency: circle.frequency,
         memberCount: circle.member_count,
+        currentRound: circle.current_round ?? null,
+        totalRounds: circle.total_rounds ?? null,
+        roundDueAt: circle.round_due_at ?? null,
       };
     }
   } catch {
@@ -176,8 +179,38 @@ export default async function CircleDashboardPage({
 
   // The "Overview" panel — the live on-chain dashboard. Shared by both the
   // tabbed (real circle) and plain (raw-address) layouts.
+  // Rotation round status (migration 0020). Shown for real circles that carry
+  // round data; raw-address views leave these null.
+  const roundDue = data.roundDueAt ? new Date(data.roundDueAt) : null;
+  const roundOverdue = roundDue ? roundDue.getTime() < Date.now() : false;
+
   const overviewBody = (
     <>
+      {/* Current rotation round + contribution deadline */}
+      {isRealCircle && data.currentRound && data.totalRounds && (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-sm ${
+            roundOverdue
+              ? "border-destructive/40 bg-destructive/5"
+              : "border-border bg-secondary/40"
+          }`}
+        >
+          <span className="font-medium">
+            Round {data.currentRound} of {data.totalRounds}
+          </span>
+          {roundDue && (
+            <span
+              className={
+                roundOverdue ? "text-destructive" : "text-muted-foreground"
+              }
+            >
+              {roundOverdue ? "Contributions overdue · " : "Contributions due "}
+              {formatDateTime(data.roundDueAt)}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Contribute to the pot (only for real circles, not raw-address views) */}
       {isRealCircle && (
         <div className="space-y-3">

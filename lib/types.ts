@@ -94,6 +94,11 @@ export type Circle = {
   description: string | null;
   /** Refundable stake each member posts to join (migration 0013). 0 = no bond. */
   required_bond: number;
+  /** Rotation round cycle (migration 0020). */
+  current_round: number;
+  round_started_at: string | null;
+  round_due_at: string | null;
+  total_rounds: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -389,4 +394,8 @@ export type CircleLedger = {
   contributionAmount: number | null;
   frequency: CircleFrequency | null;
   memberCount: number | null;
+  /** Rotation round cycle (migration 0020), when available. */
+  currentRound: number | null;
+  totalRounds: number | null;
+  roundDueAt: string | null;
 };
