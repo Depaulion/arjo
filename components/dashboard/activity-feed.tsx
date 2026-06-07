@@ -237,6 +237,11 @@ export function ActivityFeed({
                         <p className="truncate text-sm font-medium">
                           {meta.label}
                         </p>
+                        {e.note && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {e.note}
+                          </p>
+                        )}
                         <p className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{timeOnly(e.created_at)}</span>
                           {e.tx_hash && (
