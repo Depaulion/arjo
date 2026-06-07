@@ -180,8 +180,9 @@ export function CreateCircleForm({
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          A refundable stake each member posts to join. Held in the vault and
-          returned when they complete the circle — or slashed if they default.
+          A refundable stake each member posts to join. Held in the vault, it
+          earns ~8% APY (USYC, Treasury-backed) while locked — returned with the
+          yield when they complete the circle, or forfeited if they default.
           Higher-risk members may be asked for 2–3×. Leave at 0 for no bond.
         </p>
       </div>
