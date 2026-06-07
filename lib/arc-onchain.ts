@@ -141,14 +141,34 @@ export function formatUsdcUnits(value: bigint): number {
   return Number(whole) + Number(frac) / Number(divisor);
 }
 
-/** Current USDC balance (whole USDC) of an address via the ERC-20 precompile. */
-export async function getUsdcBalance(address: string): Promise<number> {
-  const data = BALANCE_OF_SELECTOR + address.replace(/^0x/, "").padStart(64, "0");
+/** Convert a raw integer token value at `decimals` precision to a JS number. */
+export function formatTokenUnits(value: bigint, decimals: number): number {
+  const divisor = BigInt("1" + "0".repeat(decimals));
+  const whole = value / divisor;
+  const frac = value % divisor;
+  return Number(whole) + Number(frac) / Number(divisor);
+}
+
+/**
+ * Read an ERC-20 `balanceOf(address)` for any token on Arc and return the
+ * balance as a whole-token JS number. Used for USDC (6dp) and USYC (6dp) alike.
+ */
+export async function erc20BalanceOf(
+  tokenAddress: string,
+  holder: string,
+  decimals: number
+): Promise<number> {
+  const data = BALANCE_OF_SELECTOR + holder.replace(/^0x/, "").padStart(64, "0");
   const result = await rpc<string>("eth_call", [
-    { to: ARC_USDC_ADDRESS, data },
+    { to: tokenAddress, data },
     "latest",
   ]);
-  return formatUsdcUnits(hexToBigInt(result));
+  return formatTokenUnits(hexToBigInt(result), decimals);
+}
+
+/** Current USDC balance (whole USDC) of an address via the ERC-20 precompile. */
+export async function getUsdcBalance(address: string): Promise<number> {
+  return erc20BalanceOf(ARC_USDC_ADDRESS, address, ARC_USDC_DECIMALS);
 }
 
 export type TransferScan = {

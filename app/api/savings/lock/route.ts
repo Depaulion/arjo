@@ -6,6 +6,8 @@ import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { getUserWallet, applyGamification } from "@/lib/savings-actions";
+import { isUsycEnabled, mintUsycFromUsdc } from "@/lib/usyc";
+import { getUsdcBalance } from "@/lib/arc-onchain";
 import type { AutoCadence, SavingsPlan, SavingsPlanType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -178,6 +180,32 @@ export async function POST(request: Request) {
     } else {
       // Circle unavailable — keep the ledger pending for later reconciliation.
       pending = true;
+    }
+  }
+
+  // Live USYC: keep the vault productive by sweeping its already-settled idle
+  // USDC into USYC (the just-sent deposit is still pending, so it isn't swept
+  // here — a later lock/sweep picks it up once confirmed). Best-effort: never
+  // let a yield-sweep failure block opening the plan.
+  if (isUsycEnabled() && vaultAddress) {
+    try {
+      const idle = await getUsdcBalance(vaultAddress);
+      if (idle > 0) {
+        const vaultWalletId = process.env.ARC_VAULT_WALLET_ID;
+        if (vaultWalletId) {
+          await mintUsycFromUsdc({
+            walletId: vaultWalletId,
+            usdcAmount: idle,
+            refId: `sweep:${plan.id}`,
+          });
+        }
+      }
+    } catch (sweepErr) {
+      console.warn(
+        `[usyc] idle-USDC sweep failed: ${
+          sweepErr instanceof Error ? sweepErr.message : "unknown error"
+        }`
+      );
     }
   }
 

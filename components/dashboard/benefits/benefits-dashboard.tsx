@@ -54,22 +54,39 @@ export function BenefitsDashboard({
   currency: ArcStablecoin;
 }) {
   const apyPct = Math.round(benefits.apy * 100);
+  const live = benefits.mode === "live";
 
   return (
     <div className="space-y-5">
       {/* Headline: total yield earned + accruing */}
       <Card className="border-emerald-500/30 bg-gradient-to-br from-card to-emerald-500/5">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <CardTitle className="text-lg">Your benefits</CardTitle>
-              <CardDescription>
-                The value your savings generate, in one place.
-              </CardDescription>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div>
+                <CardTitle className="text-lg">Your benefits</CardTitle>
+                <CardDescription>
+                  The value your savings generate, in one place.
+                </CardDescription>
+              </div>
             </div>
+            <span
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                live
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-500"
+              }`}
+              title={
+                live
+                  ? "Yield is backed by a live, allowlisted USYC position."
+                  : "USYC not yet enabled — figures are simulated at the published USYC rate."
+              }
+            >
+              {live ? "Live USYC" : "Simulated"}
+            </span>
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
@@ -150,13 +167,24 @@ export function BenefitsDashboard({
             <span className="font-medium text-foreground">
               {YIELD_SOURCE.name} ({YIELD_SOURCE.token})
             </span>
-            , backed by {YIELD_SOURCE.backing}. Its value rises a little each day,
-            and that accrual is the yield you see here — not platform subsidy or
-            token emissions.
+            , backed by {YIELD_SOURCE.backing}. Its redemption value rises a
+            little each day, and that accrual is the yield you see here — not
+            platform subsidy or token emissions.
           </p>
           <p className="text-xs">
-            Figures are illustrative on Arc Testnet (no live USYC vault). Rates
-            track the market and aren&apos;t guaranteed.{" "}
+            {live ? (
+              <>
+                Yield is funded by the vault&apos;s live USYC position on Arc.
+                Rates track the market and aren&apos;t guaranteed.
+              </>
+            ) : (
+              <>
+                USYC has live contracts on Arc but is permissioned — until the
+                vault is allowlisted, these figures are{" "}
+                <span className="font-medium text-foreground">simulated</span> at
+                the published USYC rate, not disbursed from a real position.
+              </>
+            )}{" "}
             <Link href="/docs#yield" className="text-primary hover:underline">
               Read more in the docs
             </Link>

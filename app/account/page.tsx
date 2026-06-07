@@ -23,6 +23,7 @@ import {
 import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { computeBenefits } from "@/lib/benefits";
+import { isUsycEnabled } from "@/lib/usyc";
 import { getPersistedNotifications } from "@/lib/notifications";
 import {
   type Challenge,
@@ -292,6 +293,7 @@ export default async function AccountPage() {
     level: safeProfile.level ?? 1,
     streakWeeks: Math.max(safeProfile.streak_weeks ?? 0, snapshot.streakWeeks),
     badges: safeProfile.badges ?? [],
+    usycLive: isUsycEnabled(),
   });
 
   // --- Analytics chart data (derived, no extra queries) ---

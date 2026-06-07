@@ -6,6 +6,7 @@ import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { accrueYield, effectiveApy } from "@/lib/yield-engine";
+import { isUsycEnabled, redeemUsycToUsdc, yieldMode } from "@/lib/usyc";
 import type { SavingsPlan } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -108,7 +109,12 @@ export async function POST(
       currency,
       planId: plan.id,
       status: "confirmed",
-      note: "USYC yield (Treasury-backed)",
+      // Be explicit about whether this is a real USYC payout or a simulated
+      // testnet preview, so the ledger never overstates what's backed on-chain.
+      note:
+        yieldMode() === "live"
+          ? "USYC yield (live, Treasury-backed)"
+          : "USYC yield (simulated testnet preview, Treasury-backed)",
     });
   }
 
@@ -118,6 +124,27 @@ export async function POST(
   if (isCircleConfigured() && userAddress && payout > 0) {
     try {
       const vault = await ensureVault();
+      // Live USYC: the vault holds its reserve as USYC, so redeem enough back to
+      // USDC to fund this payout before sending. Best-effort — if redemption is
+      // unavailable (not allowlisted / signature mismatch) we fall through to
+      // paying from whatever USDC the vault already holds, and the ledger row
+      // stays authoritative either way.
+      if (isUsycEnabled()) {
+        try {
+          await redeemUsycToUsdc({
+            walletId: vault.walletId,
+            usycAmount: payout,
+            idempotencyKey: `redeem:${ledger.id}`,
+            refId: `withdraw:${plan.id}`,
+          });
+        } catch (redeemErr) {
+          console.warn(
+            `[usyc] redeem before payout failed for plan ${plan.id}: ${
+              redeemErr instanceof Error ? redeemErr.message : "unknown error"
+            }`
+          );
+        }
+      }
       const res = await sendUsdc({
         fromWalletId: vault.walletId,
         toAddress: userAddress,

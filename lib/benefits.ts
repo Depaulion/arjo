@@ -31,6 +31,12 @@ export type BenefitStream = {
 
 export type BenefitsSnapshot = {
   currency: ArcStablecoin;
+  /**
+   * Yield mode: "live" when the vault holds a real, allowlisted USYC position;
+   * "simulated" when figures are illustrative (USYC not yet enabled). Drives
+   * honest labelling in the UI. See lib/usyc.ts.
+   */
+  mode: "live" | "simulated";
   /** USYC base APY as a fraction (e.g. 0.08). */
   apy: number;
   /** Yield already realised (confirmed `bonus` ledger entries). */
@@ -54,6 +60,8 @@ export type BenefitsInput = {
   streakWeeks: number;
   badges: string[];
   now?: Date;
+  /** True when live USYC is enabled (lib/usyc.ts isUsycEnabled()). */
+  usycLive?: boolean;
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -109,13 +117,18 @@ export function computeBenefits(input: BenefitsInput): BenefitsSnapshot {
   const bondsReleased = sumKinds(input.ledger, ["bond_refund", "bond_slash"]);
   const bondsHeld = round2(Math.max(0, bondsPosted - bondsReleased));
 
+  const live = input.usycLive ?? false;
+  const apyPct = Math.round(USYC_BASE_APY * 100);
+
   const streams: BenefitStream[] = [
     {
       key: "yield",
       label: "USYC yield",
       value: yieldTotal,
       unit: "currency",
-      caption: `Earning ~${Math.round(USYC_BASE_APY * 100)}% APY, Treasury-backed`,
+      caption: live
+        ? `Earning ~${apyPct}% APY, Treasury-backed`
+        : `Projected ~${apyPct}% APY, Treasury-backed (simulated)`,
       detail:
         principalAtWork > 0
           ? `${yieldAccruing} ${currency} accruing on ${principalAtWork} ${currency} at work · ${yieldEarned} ${currency} already paid out`
@@ -162,6 +175,7 @@ export function computeBenefits(input: BenefitsInput): BenefitsSnapshot {
 
   return {
     currency,
+    mode: input.usycLive ? "live" : "simulated",
     apy: USYC_BASE_APY,
     yieldEarned,
     yieldAccruing,

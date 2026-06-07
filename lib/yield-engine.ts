@@ -8,13 +8,17 @@
  * balance grows a little every day. That accrual — NOT platform subsidy, NOT new
  * token emissions — is the yield Arjo passes through to savers.
  *
- * On Arc Testnet there is no live USYC vault to deposit into, so the figures
- * here are computed deterministically at a base rate that tracks the published
- * USYC rate. They are clearly labelled "illustrative" in the UI. The math is the
- * same one a real integration would use, so swapping the testnet simulation for
- * an on-chain USYC position later is a data-source change, not a rewrite.
+ * USYC is REAL on Arc — see lib/usyc.ts for the on-chain integration (token,
+ * Teller mint/redeem, allowlist). This module is the *attribution model*: given
+ * a principal and a holding period it computes the yield share, daily-compounded
+ * at a rate that tracks the published USYC rate. When live USYC is enabled
+ * (isUsycEnabled), that share is funded by the vault's real USYC appreciation;
+ * until the vault is allowlisted the same figure runs in a clearly-labelled
+ * "simulated" mode. Either way the math is identical — going live is a config
+ * change, not a rewrite.
  *
  * Pure module: no I/O, no `server-only`, safe to import on client or server.
+ * (Mode detection lives in lib/usyc.ts, which is server-only.)
  */
 
 /** Metadata describing the yield source, surfaced in the UI and docs. */

@@ -336,9 +336,14 @@ export default function DocsPage() {
                 </li>
               </ul>
               <p className="rounded-2xl border border-accent/40 bg-accent/5 p-4 text-sm">
-                On {ARC_TESTNET.name} these figures are illustrative — test
-                tokens carry no real value and earn no real yield. The mechanism
-                above is how yield is sourced once Arjo runs on mainnet.
+                USYC has <strong className="text-foreground">live contracts on{" "}
+                {ARC_TESTNET.name}</strong> (token, Teller, and an allowlist), so
+                this isn&apos;t mainnet-only. Access is permissioned, though:
+                until the platform vault is allowlisted by Circle, yield runs in a
+                clearly-labelled <strong className="text-foreground">simulated</strong>{" "}
+                mode that tracks the published USYC rate — the same math, just not
+                yet disbursed from a real position. Enabling the live position is a
+                config change, not a rebuild.
               </p>
             </Section>
 
