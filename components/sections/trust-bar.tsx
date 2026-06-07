@@ -7,10 +7,10 @@ import Image from "next/image";
  * the value props live in <Features /> and <HowItWorks /> below, so this never
  * duplicates them.
  *
- * All three use their official brand marks. Drop the files at:
- *   public/brand/arc-logo.png    (icon-only mark — we render "Arc" beside it)
- *   public/brand/circle-logo.png (full lockup — already includes the name)
- *   public/brand/usdc-logo.png   (full lockup — already includes the name)
+ * All three use their official brand marks. Files live at:
+ *   public/brand/arc-logo.jpg    (icon-only mark — we render "Arc" beside it)
+ *   public/brand/circle-logo.jpg (full lockup — already includes the name)
+ *   public/brand/usdc-logo.jpg   (full lockup — already includes the name)
  * The intrinsic width/height below just set each image's aspect ratio so it's
  * displayed at a uniform 24px height without distortion.
  */
@@ -28,22 +28,22 @@ type Partner = {
 const PARTNERS: Partner[] = [
   {
     name: "Arc",
-    logo: "/brand/arc-logo.png",
+    logo: "/brand/arc-logo.jpg",
     width: 24,
     height: 24,
     imgClassName: "rounded-md",
   },
   {
     name: "Circle",
-    logo: "/brand/circle-logo.png",
-    width: 96,
+    logo: "/brand/circle-logo.jpg",
+    width: 90,
     height: 24,
     lockup: true,
   },
   {
     name: "USDC",
-    logo: "/brand/usdc-logo.png",
-    width: 78,
+    logo: "/brand/usdc-logo.jpg",
+    width: 87,
     height: 24,
     lockup: true,
   },
@@ -74,6 +74,7 @@ export function TrustBar() {
                   alt={`${p.name} logo`}
                   width={p.width}
                   height={p.height}
+                  unoptimized
                   className={`h-6 w-auto object-contain ${p.imgClassName ?? ""}`}
                 />
                 {!p.lockup && p.name}
