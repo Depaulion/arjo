@@ -156,6 +156,13 @@ export function QuickSave({
         {amount > 0 ? `Save ${fmt(amount)} ${currency}` : "Save"}
       </Button>
 
+      <p className="mt-3 text-center text-[11px] text-muted-foreground">
+        Flex vault stays liquid at 0% APY.{" "}
+        <span className="font-semibold text-emerald-500">
+          Open a SafeLock below to earn up to 8% APY, Treasury-backed.
+        </span>
+      </p>
+
       {!onChainEnabled && (
         <p className="mt-3 text-xs text-muted-foreground">
           On-chain transfers are off — saves are tracked and settle once a funded

@@ -7,8 +7,16 @@ import { CalendarDays, Loader2, Plus, Sparkles, Target, Trash2 } from "lucide-re
 import { createClient } from "@/lib/supabase/client";
 import { ARC_STABLECOINS, type ArcStablecoin } from "@/lib/arc";
 import type { SavingsGoal } from "@/lib/types";
+import {
+  USYC_BASE_APY,
+  daysBetween,
+  projectYield,
+} from "@/lib/yield-engine";
 import { goalEmoji } from "@/components/dashboard/home/primary-goal-card";
 import { Button } from "@/components/ui/button";
+
+/** SafeLock APY a goal earns when funded into a locked, Treasury-backed vault. */
+const GOAL_LOCK_APY = USYC_BASE_APY; // 0.08
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -182,6 +190,10 @@ export function GoalsView({
             Tracking {goals.length} goal{goals.length === 1 ? "" : "s"}
             {summary.reached > 0 && ` · ${summary.reached} reached`}
           </p>
+          <p className="mt-2 text-xs text-emerald-500">
+            Fund a goal with a SafeLock to earn up to 8% APY, Treasury-backed by
+            USYC — your savings grow while you reach it.
+          </p>
         </div>
       )}
 
@@ -295,6 +307,17 @@ export function GoalsView({
             );
             const remaining = Math.max(0, goal.target_amount - balance);
             const done = remaining <= 0;
+            // What this goal's target would earn if funded in a SafeLock until
+            // its target date (daily-compounded USYC). Shows goals as real,
+            // yield-earning savings rather than passive trackers.
+            const lockDays = goal.target_date
+              ? daysBetween(new Date(), goal.target_date)
+              : 365;
+            const projectedYield = projectYield({
+              principal: goal.target_amount,
+              days: lockDays,
+              apy: GOAL_LOCK_APY,
+            });
             return (
               <div
                 key={goal.id}
@@ -352,6 +375,24 @@ export function GoalsView({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {estimateCompletion(remaining, weeklyRate, goal.target_date)}
                 </p>
+
+                {!done && projectedYield > 0 && (
+                  <a
+                    href="#save"
+                    className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 transition-colors hover:bg-emerald-500/10"
+                  >
+                    <span className="text-xs leading-tight text-muted-foreground">
+                      Lock in a SafeLock and earn{" "}
+                      <span className="font-semibold text-emerald-500">
+                        +{fmt(projectedYield)} {goal.currency}
+                      </span>{" "}
+                      {goal.target_date ? "by your target date" : "in a year"}
+                    </span>
+                    <span className="shrink-0 text-xs font-semibold text-emerald-500">
+                      Save →
+                    </span>
+                  </a>
+                )}
               </div>
             );
           })}

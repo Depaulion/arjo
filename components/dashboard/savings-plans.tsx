@@ -18,6 +18,12 @@ import type {
   SavingsPlan,
   SavingsPlanType,
 } from "@/lib/types";
+import {
+  accrueYield,
+  daysBetween,
+  effectiveApy,
+  projectYield,
+} from "@/lib/yield-engine";
 import { Button } from "@/components/ui/button";
 
 function fmt(n: number) {
@@ -33,29 +39,42 @@ function formatDate(iso: string | null) {
   });
 }
 
+/**
+ * Per-plan-type presentation. `apy` MUST match APY_BONUS in
+ * app/api/savings/lock/route.ts (locked 8 / target 4 / auto 2 / flex 0) so the
+ * rate shown at decision time is the rate actually credited.
+ */
 const PLAN_META: Record<
   SavingsPlanType,
-  { label: string; icon: React.ReactNode; tint: string }
+  { label: string; icon: React.ReactNode; tint: string; apy: number; tagline: string }
 > = {
   locked: {
     label: "SafeLock",
     icon: <Lock className="h-4 w-4" />,
     tint: "bg-primary/15 text-primary",
+    apy: 8,
+    tagline: "Highest yield · fixed term",
   },
   target: {
     label: "Target",
     icon: <Target className="h-4 w-4" />,
     tint: "bg-accent/15 text-accent-foreground",
+    apy: 4,
+    tagline: "Save toward an amount",
   },
   auto: {
     label: "Auto-save",
     icon: <Repeat className="h-4 w-4" />,
     tint: "bg-primary/15 text-primary",
+    apy: 2,
+    tagline: "Set-and-forget recurring",
   },
   flex: {
     label: "Flexible",
     icon: <Unlock className="h-4 w-4" />,
     tint: "bg-secondary text-muted-foreground",
+    apy: 0,
+    tagline: "Withdraw anytime · no lock",
   },
 };
 
@@ -176,6 +195,29 @@ export function SavingsPlans({
     p.next_run_at !== null &&
     new Date(p.next_run_at) <= new Date();
 
+  // Live earnings preview for the create form — shows the saver exactly what
+  // their deposit is projected to earn before they commit. Uses the same
+  // daily-compounded USYC model the vault credits on withdrawal.
+  const previewMeta = PLAN_META[planType];
+  const previewApy = effectiveApy(previewMeta.apy);
+  const previewPrincipal =
+    planType === "auto" ? Number(autoAmount) : Number(amount);
+  // Horizon: SafeLock uses the chosen lock term; everything else projects 1 yr.
+  const previewDays =
+    planType === "locked" && lockUntil
+      ? daysBetween(new Date(), lockUntil)
+      : 365;
+  const previewYield =
+    previewMeta.apy > 0 &&
+    Number.isFinite(previewPrincipal) &&
+    previewPrincipal > 0
+      ? projectYield({
+          principal: previewPrincipal,
+          days: previewDays,
+          apy: previewApy,
+        })
+      : 0;
+
   return (
     <div className="space-y-4">
       {!onChainEnabled && (
@@ -190,6 +232,21 @@ export function SavingsPlans({
           {active.map((p) => {
             const meta = PLAN_META[p.plan_type];
             const due = isDue(p);
+            const apy = effectiveApy(p.apy_bonus);
+            // Live, daily-compounded yield earned so far on this principal.
+            const earnedSoFar =
+              p.apy_bonus > 0 && p.principal > 0
+                ? accrueYield({ principal: p.principal, from: p.created_at, apy })
+                : 0;
+            // For a fixed-term SafeLock, the projected yield at maturity.
+            const projectedAtMaturity =
+              p.plan_type === "locked" && p.lock_until && p.principal > 0
+                ? projectYield({
+                    principal: p.principal,
+                    days: daysBetween(p.created_at, p.lock_until),
+                    apy,
+                  })
+                : 0;
             return (
               <li
                 key={p.id}
@@ -203,10 +260,16 @@ export function SavingsPlans({
                       {meta.icon}
                     </span>
                     <div>
-                      <p className="font-semibold">{p.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">{p.name}</p>
+                        {p.apy_bonus > 0 && (
+                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+                            {p.apy_bonus}% APY
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {meta.label} · {fmt(p.principal)} {p.currency}
-                        {p.apy_bonus > 0 ? ` · ${p.apy_bonus}% bonus` : ""}
+                        {meta.label} · {fmt(p.principal)} {p.currency} balance
                       </p>
                     </div>
                   </div>
@@ -242,6 +305,29 @@ export function SavingsPlans({
                     )}
                   </div>
                 </div>
+                {p.apy_bonus > 0 && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Yield earned so far
+                      </p>
+                      <p className="text-sm font-semibold text-emerald-500">
+                        +{fmt(earnedSoFar)} {p.currency}
+                      </p>
+                    </div>
+                    {projectedAtMaturity > 0 && (
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Projected at maturity
+                        </p>
+                        <p className="text-sm font-semibold">
+                          {fmt(p.principal + projectedAtMaturity)} {p.currency}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {p.plan_type === "locked" && p.lock_until && (
                     <span className="inline-flex items-center gap-1">
@@ -305,6 +391,15 @@ export function SavingsPlans({
                 >
                   {PLAN_META[t].icon}
                   {PLAN_META[t].label}
+                  <span
+                    className={`rounded-full px-1.5 text-[10px] font-semibold ${
+                      PLAN_META[t].apy > 0
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {PLAN_META[t].apy > 0 ? `${PLAN_META[t].apy}% APY` : "0% APY"}
+                  </span>
                 </button>
               )
             )}
@@ -445,10 +540,58 @@ export function SavingsPlans({
             </div>
           )}
 
-          {planType === "locked" && (
-            <p className="text-xs text-muted-foreground">
-              SafeLock earns an 8% APY bonus on maturity. Early withdrawal incurs
-              a 10% penalty.
+          {/* Live earnings preview — what this deposit is projected to earn. */}
+          {previewMeta.apy > 0 ? (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {previewMeta.label} earns
+                </span>
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+                  {previewMeta.apy}% APY · USYC
+                </span>
+              </div>
+              {previewYield > 0 ? (
+                <div className="mt-2 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {planType === "locked"
+                        ? "Projected yield at maturity"
+                        : planType === "auto"
+                        ? "Projected yield (per contribution, 1 yr)"
+                        : "Projected yield (1 yr)"}
+                    </p>
+                    <p className="text-lg font-bold text-emerald-500">
+                      +{fmt(previewYield)} {currency}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Projected total
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {fmt(previewPrincipal + previewYield)} {currency}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {planType === "locked"
+                    ? "Enter a deposit and lock-until date to preview your Treasury-backed yield."
+                    : "Enter a deposit to preview your Treasury-backed yield."}
+                </p>
+              )}
+              {planType === "locked" && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Yield is daily-compounded and paid on maturity. Early
+                  withdrawal forfeits the bonus and incurs a 10% penalty.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
+              Flexible savings stays fully liquid and earns 0% APY. Choose
+              SafeLock to earn up to 8% APY, Treasury-backed by USYC.
             </p>
           )}
 
