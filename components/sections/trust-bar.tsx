@@ -1,4 +1,12 @@
-import { CircleDollarSign, RefreshCw, Triangle } from "lucide-react";
+import Image from "next/image";
+import { CircleDollarSign, RefreshCw, type LucideIcon } from "lucide-react";
+
+type Partner = {
+  name: string;
+  tint: string;
+  logo?: string;
+  icon?: LucideIcon;
+};
 
 /**
  * "Built on Arc" trust strip — a slim credibility band placed directly under the
@@ -7,12 +15,16 @@ import { CircleDollarSign, RefreshCw, Triangle } from "lucide-react";
  * the value props live in <Features /> and <HowItWorks /> below, so this never
  * duplicates them.
  *
- * Partner names are rendered as styled wordmarks (icon + text) using the app's
- * own design tokens rather than embedded brand logo files — swap in official
- * SVGs here later if/when they're available.
+ * Arc uses the official brand mark (drop the file at public/brand/arc-logo.png).
+ * Circle and USDC are rendered as styled icon wordmarks from the app's own design
+ * tokens — swap in their official SVGs here later if/when they're available.
  */
 const PARTNERS = [
-  { name: "Arc", icon: Triangle, tint: "text-primary" },
+  {
+    name: "Arc",
+    logo: "/brand/arc-logo.png",
+    tint: "text-primary",
+  },
   { name: "Circle", icon: RefreshCw, tint: "text-accent" },
   { name: "USDC", icon: CircleDollarSign, tint: "text-sky-400" },
 ];
@@ -37,7 +49,17 @@ export function TrustBar() {
                 key={p.name}
                 className="flex items-center gap-2 text-base font-bold tracking-tight"
               >
-                <p.icon className={`h-5 w-5 ${p.tint}`} />
+                {p.logo ? (
+                  <Image
+                    src={p.logo}
+                    alt={`${p.name} logo`}
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 rounded-md"
+                  />
+                ) : (
+                  p.icon && <p.icon className={`h-5 w-5 ${p.tint}`} />
+                )}
                 {p.name}
               </span>
             ))}
