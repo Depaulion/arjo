@@ -22,7 +22,9 @@ export type LedgerKind =
   // slash on default.
   | "bond"
   | "bond_refund"
-  | "bond_slash";
+  | "bond_slash"
+  // Yield earned by a held bond while invested in USYC (migration 0018).
+  | "bond_yield";
 
 export type LedgerStatus = "pending" | "confirmed" | "failed";
 

@@ -119,6 +119,9 @@ export type CircleMember = {
   /** Bond posted to join, held in the vault until completion (migration 0013). */
   bond_amount: number;
   bond_status: BondStatus;
+  /** When the bond principal began earning USYC yield (migration 0018). Null
+   *  for legacy rows with no held bond. Yield is accrued on-read from here. */
+  bond_started_at: string | null;
   grace_period_ends: string | null;
   missed_contributions: number;
   /** Per-circle defaulter standing (migration 0013). */
@@ -295,7 +298,10 @@ export type LedgerKind =
   // slash on default. Mirrors lib/ledger.ts.
   | "bond"
   | "bond_refund"
-  | "bond_slash";
+  | "bond_slash"
+  // Yield earned by a held bond while invested in USYC (migration 0018).
+  // Paid to the member on a good-standing return; forfeited to the pot on slash.
+  | "bond_yield";
 export type LedgerStatus = "pending" | "confirmed" | "failed";
 
 export type LedgerEntry = {

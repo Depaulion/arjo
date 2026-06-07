@@ -8,9 +8,13 @@ import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { getUserWallet } from "@/lib/savings-actions";
 import { shortenHex } from "@/lib/arc";
+import { bondYield } from "@/lib/bond";
+import { isUsycEnabled, redeemUsycToUsdc } from "@/lib/usyc";
 import type { Circle } from "@/lib/types";
 
 export const runtime = "nodejs";
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 type Action = "grace" | "clear" | "slash" | "return-bond";
 
@@ -20,6 +24,7 @@ type MemberRow = {
   payout_address: string | null;
   bond_amount: number;
   bond_status: "held" | "returned" | "slashed";
+  bond_started_at: string | null;
   default_status: "none" | "grace" | "defaulted";
 };
 
@@ -100,7 +105,7 @@ export async function POST(
   const { data: member } = await supabase
     .from("circle_members")
     .select(
-      "user_id, role, payout_address, bond_amount, bond_status, default_status"
+      "user_id, role, payout_address, bond_amount, bond_status, bond_started_at, default_status"
     )
     .eq("circle_id", circle.id)
     .eq("user_id", targetUserId)
@@ -147,6 +152,14 @@ export async function POST(
   // --- Money actions: ledger-first transfer, then commit state --------------
   const bond = Math.max(0, Number(member.bond_amount) || 0);
   const slashable = member.bond_status === "held" ? bond : 0;
+  // A held bond is yield-bearing (migration 0018): it has accrued USYC APY since
+  // `bond_started_at`. On a good-standing return the member keeps that yield; on
+  // a slash it is forfeited to the pot alongside the principal. Only a still-held
+  // bond is earning, so yield is 0 once the bond has been returned/slashed.
+  const bondEarned =
+    member.bond_status === "held"
+      ? bondYield(bond, member.bond_started_at)
+      : 0;
 
   if (action === "return-bond") {
     if (member.bond_status !== "held" || bond <= 0) {
@@ -187,6 +200,10 @@ export async function POST(
       );
     }
 
+    // Member in good standing keeps the bond's accrued USYC yield: pay back
+    // principal + earned in a single transfer.
+    const payout = round2(bond + bondEarned);
+
     const ledger = await recordLedgerEntry(supabase, {
       userId: targetUserId,
       kind: "bond_refund",
@@ -198,10 +215,29 @@ export async function POST(
     });
 
     try {
+      // Live USYC: the vault holds the bond as USYC, so redeem enough back to
+      // USDC to fund principal + yield before sending. Best-effort — fall
+      // through to paying from on-hand USDC if redemption is unavailable.
+      if (isUsycEnabled()) {
+        try {
+          await redeemUsycToUsdc({
+            walletId: vault.walletId,
+            usycAmount: payout,
+            idempotencyKey: `redeem:${ledger.id}`,
+            refId: `bond-refund:${circle.id}`,
+          });
+        } catch (redeemErr) {
+          console.warn(
+            `[usyc] redeem before bond refund failed for circle ${circle.id}: ${
+              redeemErr instanceof Error ? redeemErr.message : "unknown error"
+            }`
+          );
+        }
+      }
       const res = await sendUsdc({
         fromWalletId: vault.walletId,
         toAddress: member.payout_address,
-        amount: bond,
+        amount: payout,
         idempotencyKey: ledger.id,
         refId: `bond-refund:${circle.id}`,
       });
@@ -210,6 +246,24 @@ export async function POST(
         circleTxId: res.circleTxId,
         txHash: res.txHash,
       });
+      // Record the yield portion as its own auditable entry, sharing the same
+      // on-chain transfer (no separate send).
+      if (bondEarned > 0) {
+        const yieldLedger = await recordLedgerEntry(supabase, {
+          userId: targetUserId,
+          kind: "bond_yield",
+          amount: bondEarned,
+          currency,
+          circleId: circle.id,
+          destination: member.payout_address,
+          note: `Bond yield (USYC) paid with refund from "${circle.name}"`,
+        });
+        await settleLedgerEntry(supabase, yieldLedger.id, {
+          status: "pending",
+          circleTxId: res.circleTxId,
+          txHash: res.txHash,
+        });
+      }
     } catch (err) {
       // Send failed: keep the row pending and the bond 'held' so it can retry.
       await settleLedgerEntry(supabase, ledger.id, {
@@ -223,7 +277,9 @@ export async function POST(
         {
           ok: false,
           pending: true,
-          amount: bond,
+          amount: payout,
+          principal: bond,
+          earned: bondEarned,
           currency,
           ledgerId: ledger.id,
           error:
@@ -240,7 +296,9 @@ export async function POST(
     });
     return NextResponse.json({
       ok: !returnError,
-      amount: bond,
+      amount: payout,
+      principal: bond,
+      earned: bondEarned,
       currency,
       destination: member.payout_address,
       ledgerId: ledger.id,
@@ -273,6 +331,10 @@ export async function POST(
     }
 
     if (vault && pot.address) {
+      // The forfeited position is principal + the USYC yield it accrued while
+      // held — the defaulter loses both, and the yield grows the pot the other
+      // members are owed.
+      const forfeited = round2(slashable + bondEarned);
       const ledger = await recordLedgerEntry(supabase, {
         userId: targetUserId,
         kind: "bond_slash",
@@ -283,10 +345,28 @@ export async function POST(
         note: `Bond slashed to pot from "${circle.name}" (missed contribution)`,
       });
       try {
+        // Live USYC: redeem the held position (principal + yield) back to USDC
+        // before forwarding to the pot. Best-effort, same as the refund path.
+        if (isUsycEnabled()) {
+          try {
+            await redeemUsycToUsdc({
+              walletId: vault.walletId,
+              usycAmount: forfeited,
+              idempotencyKey: `redeem:${ledger.id}`,
+              refId: `bond-slash:${circle.id}`,
+            });
+          } catch (redeemErr) {
+            console.warn(
+              `[usyc] redeem before bond slash failed for circle ${circle.id}: ${
+                redeemErr instanceof Error ? redeemErr.message : "unknown error"
+              }`
+            );
+          }
+        }
         const res = await sendUsdc({
           fromWalletId: vault.walletId,
           toAddress: pot.address,
-          amount: slashable,
+          amount: forfeited,
           idempotencyKey: ledger.id,
           refId: `bond-slash:${circle.id}`,
         });
@@ -295,6 +375,23 @@ export async function POST(
           circleTxId: res.circleTxId,
           txHash: res.txHash,
         });
+        // Record the forfeited yield portion as its own entry, sharing the send.
+        if (bondEarned > 0) {
+          const yieldLedger = await recordLedgerEntry(supabase, {
+            userId: targetUserId,
+            kind: "bond_yield",
+            amount: bondEarned,
+            currency,
+            circleId: circle.id,
+            destination: pot.address,
+            note: `Bond yield (USYC) forfeited to pot from "${circle.name}"`,
+          });
+          await settleLedgerEntry(supabase, yieldLedger.id, {
+            status: "pending",
+            circleTxId: res.circleTxId,
+            txHash: res.txHash,
+          });
+        }
         transfer = { txHash: res.txHash };
       } catch (err) {
         transferPending = true;
@@ -323,6 +420,7 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     slashed: Math.max(0, Number(slashed) || 0),
+    yieldForfeited: bondEarned,
     currency,
     transfer,
     transferPending,

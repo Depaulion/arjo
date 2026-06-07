@@ -7,6 +7,8 @@ import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { getUserWallet } from "@/lib/savings-actions";
+import { getUsdcBalance } from "@/lib/arc-onchain";
+import { isUsycEnabled, mintUsycFromUsdc } from "@/lib/usyc";
 import {
   assessRisk,
   circleAccess,
@@ -221,15 +223,42 @@ export async function POST(
     } else {
       pending = true;
     }
+
+    // Live USYC: keep the held bond productive by sweeping the vault's already-
+    // settled idle USDC into USYC (the bond just sent is still pending, so a
+    // later sweep picks it up once confirmed). Best-effort: a yield-sweep
+    // failure must never block the member from joining.
+    if (isUsycEnabled() && vaultAddress) {
+      try {
+        const idle = await getUsdcBalance(vaultAddress);
+        const vaultWalletId = process.env.ARC_VAULT_WALLET_ID;
+        if (idle > 0 && vaultWalletId) {
+          await mintUsycFromUsdc({
+            walletId: vaultWalletId,
+            usdcAmount: idle,
+            refId: `bond-sweep:${circle.id}`,
+          });
+        }
+      } catch (sweepErr) {
+        console.warn(
+          `[usyc] bond idle-USDC sweep failed: ${
+            sweepErr instanceof Error ? sweepErr.message : "unknown error"
+          }`
+        );
+      }
+    }
   }
 
-  // Record membership with the bond held.
+  // Record membership with the bond held. A held bond is yield-bearing
+  // (migration 0018): `bond_started_at` is when its principal begins accruing
+  // USYC APY, computed on-read by lib/bond.ts. Only set it when a bond exists.
   const { error: joinError } = await supabase.from("circle_members").insert({
     circle_id: circle.id,
     user_id: user.id,
     role: "member",
     bond_amount: bond,
     bond_status: "held",
+    bond_started_at: bond > 0 ? new Date().toISOString() : null,
   });
 
   if (joinError) {

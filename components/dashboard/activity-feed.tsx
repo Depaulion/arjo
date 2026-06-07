@@ -101,6 +101,11 @@ const KIND_META: Record<
     icon: <TriangleAlert className="h-4 w-4" />,
     outgoing: true,
   },
+  bond_yield: {
+    label: "Bond yield",
+    icon: <Coins className="h-4 w-4" />,
+    outgoing: false,
+  },
 };
 
 const STATUS_META: Record<

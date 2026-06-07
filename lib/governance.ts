@@ -19,6 +19,8 @@ export type GovMember = {
   /** Bond + defaulter standing (migrations 0013/0015), for creator resolution. */
   bond_amount: number;
   bond_status: CircleMember["bond_status"];
+  /** When the bond began earning USYC yield (migration 0018); null if none. */
+  bond_started_at: string | null;
   default_status: CircleMember["default_status"];
   grace_period_ends: string | null;
 };
@@ -67,7 +69,7 @@ export async function getGovernanceData(
     const { data: memberRows } = await supabase
       .from("circle_members")
       .select(
-        "user_id, role, payout_position, payout_address, reputation, pending_exit, bond_amount, bond_status, default_status, grace_period_ends"
+        "user_id, role, payout_position, payout_address, reputation, pending_exit, bond_amount, bond_status, bond_started_at, default_status, grace_period_ends"
       )
       .eq("circle_id", circleId);
 
@@ -81,6 +83,7 @@ export async function getGovernanceData(
       bond_amount: (m.bond_amount as number | null) ?? 0,
       bond_status:
         (m.bond_status as CircleMember["bond_status"] | null) ?? "held",
+      bond_started_at: (m.bond_started_at as string | null) ?? null,
       default_status:
         (m.default_status as CircleMember["default_status"] | null) ?? "none",
       grace_period_ends: (m.grace_period_ends as string | null) ?? null,

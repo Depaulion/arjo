@@ -22,6 +22,7 @@ import {
 
 import { shortenHex } from "@/lib/arc";
 import type { ArcStablecoin } from "@/lib/arc";
+import { BOND_APY, bondPosition } from "@/lib/bond";
 import {
   PROPOSAL_TYPES,
   type ProposalStatus,
@@ -295,11 +296,21 @@ function MemberResolutionRow({
     member.grace_period_ends !== null &&
     new Date(member.grace_period_ends).getTime() < Date.now();
   const heldBond = member.bond_status === "held" && member.bond_amount > 0;
+  // A held bond earns USYC yield on-read; show principal + accrued so the
+  // creator sees the real figure that moves on return (to member) or slash
+  // (to pot). Yield only applies while held.
+  const apyPct = Math.round(BOND_APY * 100);
+  const pos = bondPosition(member.bond_amount, member.bond_started_at);
+  const bondEarned = heldBond ? pos.earned : 0;
+  const fmt2 = (n: number) =>
+    n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
   async function run(action: "grace" | "clear" | "slash" | "return-bond") {
     if (action === "slash" && heldBond) {
       const ok = window.confirm(
-        `Slash ${member.bond_amount} ${currency}? The bond is forfeited to the pot and the member is flagged and locked out of new circles. This can't be undone.`,
+        `Slash ${fmt2(pos.total)} ${currency} (${fmt2(pos.principal)} bond${
+          bondEarned > 0 ? ` + ${fmt2(bondEarned)} USYC yield` : ""
+        })? The whole position is forfeited to the pot and the member is flagged and locked out of new circles. This can't be undone.`,
       );
       if (!ok) return;
     }
@@ -320,8 +331,21 @@ function MemberResolutionRow({
     if (action === "grace") setNotice("Grace period started — member notified.");
     else if (action === "clear") setNotice("Default cleared — back in good standing.");
     else if (action === "slash")
-      setNotice(`Bond slashed (${json.slashed ?? 0} ${currency}). Consequences applied.`);
-    else setNotice(`Bond returned (${json.amount ?? 0} ${currency}).`);
+      setNotice(
+        `Bond slashed (${fmt2(Number(json.slashed ?? 0))}${
+          Number(json.yieldForfeited ?? 0) > 0
+            ? ` + ${fmt2(Number(json.yieldForfeited))} yield`
+            : ""
+        } ${currency} to pot). Consequences applied.`,
+      );
+    else
+      setNotice(
+        `Bond returned (${fmt2(Number(json.amount ?? 0))} ${currency}${
+          Number(json.earned ?? 0) > 0
+            ? ` incl. ${fmt2(Number(json.earned))} USYC yield`
+            : ""
+        }).`,
+      );
     router.refresh();
   }
 
@@ -360,7 +384,13 @@ function MemberResolutionRow({
             {memberLabel(member, currentUserId)}
           </p>
           <p className="text-xs text-muted-foreground">
-            Bond: {member.bond_amount} {currency}
+            Bond: {fmt2(pos.principal)} {currency}
+            {heldBond && (
+              <span className="text-emerald-500">
+                {" "}
+                + {fmt2(bondEarned)} yield · {apyPct}% APY
+              </span>
+            )}
           </p>
         </div>
         {statusBadge}
