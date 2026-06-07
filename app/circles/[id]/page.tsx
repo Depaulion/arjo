@@ -16,7 +16,12 @@ import {
   isEvmAddress,
   shortenHex,
 } from "@/lib/arc";
-import { getCircleLedger, type CircleLedgerInput } from "@/lib/circle-ledger";
+import {
+  getCircleLedger,
+  getCircleLedgerFromDb,
+  type CircleLedgerInput,
+} from "@/lib/circle-ledger";
+import { knownVaultAddress } from "@/lib/vault";
 import { createClient } from "@/lib/supabase/server";
 import { CIRCLE_FREQUENCIES, type Circle } from "@/lib/types";
 import type { AnalysisMember } from "@/lib/circle-analysis";
@@ -66,7 +71,8 @@ function demoAddress(): string | null {
 /**
  * Resolve which Arc wallet acts as this circle's pot:
  *  1. the route id itself, if it's an EVM address (view any address directly);
- *  2. the circle creator's Circle wallet, looked up in Supabase;
+ *  2. the shared platform vault — the pot now lives there, not in the creator's
+ *     wallet, so members never trust the creator to custody the pool;
  *  3. an optional ARC_DEMO_ADDRESS fallback for local exploration.
  */
 async function resolveCircle(id: string): Promise<CircleLedgerInput> {
@@ -83,16 +89,10 @@ async function resolveCircle(id: string): Promise<CircleLedgerInput> {
       .single<Circle>();
 
     if (circle) {
-      const { data: creator } = await supabase
-        .from("profiles")
-        .select("arc_wallet_address")
-        .eq("id", circle.created_by)
-        .single<{ arc_wallet_address: string | null }>();
-
       return {
         id,
         name: circle.name,
-        address: creator?.arc_wallet_address ?? demoAddress(),
+        address: knownVaultAddress() ?? demoAddress(),
         currency: circle.currency,
         contributionAmount: circle.contribution_amount,
         frequency: circle.frequency,
@@ -112,7 +112,13 @@ export default async function CircleDashboardPage({
   params: { id: string };
 }) {
   const input = await resolveCircle(params.id);
-  const data = await getCircleLedger(input);
+  const isRealCircle = !isEvmAddress(params.id);
+
+  // Real circles read pot/contributors/activity from the ledger (per-circle
+  // attribution in the shared vault); raw-address views still scan on-chain.
+  const data = isRealCircle
+    ? await getCircleLedgerFromDb(createClient(), input)
+    : await getCircleLedger(input);
 
   // Is the current viewer the circle's creator (the pot owner)? Only they can
   // trigger a rotating payout. Skipped for raw-address views. Also load the
@@ -120,7 +126,6 @@ export default async function CircleDashboardPage({
   let isCreator = false;
   let userId: string | null = null;
   let governance: GovernanceData | null = null;
-  const isRealCircle = !isEvmAddress(params.id);
   if (isRealCircle) {
     try {
       const supabase = createClient();

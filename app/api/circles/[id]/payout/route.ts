@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { isCircleConfigured } from "@/lib/circle";
+import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
-import { getUserWallet } from "@/lib/savings-actions";
 import { shortenHex } from "@/lib/arc";
 import type { Circle } from "@/lib/types";
 
 export const runtime = "nodejs";
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 type MemberRow = {
   user_id: string;
@@ -21,11 +23,17 @@ type MemberRow = {
 /**
  * Trigger the next rotating payout for a circle — the defining Ajo/ROSCA action.
  *
- * The pot is the circle creator's Arc wallet, so only the creator can authorize
- * a payout. We pay the next member in the rotation (lowest payout_position that
- * hasn't been paid yet) the full round pot (contribution × members, overridable
- * via the request body), record a `payout` ledger entry, and mark that member
- * paid. When the last member is paid, the circle is marked completed.
+ * The pot lives in the shared platform vault, so the payout is sent FROM the
+ * vault wallet. Only the circle creator can authorize it. We pay the next member
+ * in the rotation (lowest payout_position that hasn't been paid yet) the full
+ * round pot (contribution × members, overridable via the request body), record a
+ * `payout` ledger entry, and mark that member paid. When the last member is
+ * paid, the circle is marked completed.
+ *
+ * Because the vault commingles every circle's funds, the payout is capped at the
+ * circle's own ledger-derived pot balance (circle_pot_balance, migration 0019):
+ * a circle can never pay out more than it has collected, so one circle's payout
+ * can't touch another's money.
  *
  * Like every USDC action here, the ledger row is written first; a failed
  * on-chain send leaves the row `pending` and the member un-paid so it can be
@@ -60,7 +68,7 @@ export async function POST(
     return NextResponse.json({ error: "Circle not found." }, { status: 404 });
   }
 
-  // Only the creator controls the pot wallet, so only they can pay out.
+  // Only the creator authorizes payouts (the pot itself is the platform vault).
   if (circle.created_by !== user.id) {
     return NextResponse.json(
       { error: "Only the circle creator can send a payout." },
@@ -120,7 +128,40 @@ export async function POST(
     );
   }
 
-  const wallet = await getUserWallet(supabase, user.id); // the pot (creator) wallet
+  // Safety ceiling: never pay out more than THIS circle has collected. The vault
+  // commingles every circle's funds, so this ledger-derived balance is what
+  // keeps one circle's payout from spending another's money.
+  const { data: potBalanceRaw, error: potError } = await supabase.rpc(
+    "circle_pot_balance",
+    { p_circle_id: circle.id }
+  );
+  if (potError) {
+    return NextResponse.json(
+      { error: "Couldn't read the circle's pot balance. Try again shortly." },
+      { status: 500 }
+    );
+  }
+  const potBalance = Math.max(0, Number(potBalanceRaw) || 0);
+  if (round2(amount) > round2(potBalance)) {
+    return NextResponse.json(
+      {
+        error: `The pot holds ${potBalance} ${circle.currency}, which isn't enough for a ${amount} ${circle.currency} payout yet. It fills as members contribute this round.`,
+        potBalance,
+        requested: amount,
+      },
+      { status: 409 }
+    );
+  }
+
+  // Funds are paid FROM the platform vault, not the creator's wallet.
+  let vault: { walletId: string; address: string } | null = null;
+  if (isCircleConfigured()) {
+    try {
+      vault = await ensureVault();
+    } catch {
+      vault = null;
+    }
+  }
   const currency = circle.currency;
   const positionLabel = recipient.payout_position;
 
@@ -137,10 +178,10 @@ export async function POST(
   let transfer: { state: string | null; txHash: string | null } | null = null;
   let pending = false;
 
-  if (isCircleConfigured() && wallet.walletId) {
+  if (isCircleConfigured() && vault?.walletId) {
     try {
       const res = await sendUsdc({
-        fromWalletId: wallet.walletId,
+        fromWalletId: vault.walletId,
         toAddress: recipient.payout_address,
         amount,
         idempotencyKey: ledger.id,
@@ -203,6 +244,6 @@ export async function POST(
     pending,
     remaining: pending ? queue.length : remainingAfter,
     completed: !pending && remainingAfter === 0,
-    onChain: isCircleConfigured() && Boolean(wallet.walletId),
+    onChain: isCircleConfigured() && Boolean(vault?.walletId),
   });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { isCircleConfigured } from "@/lib/circle";
+import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { getUserWallet, applyGamification } from "@/lib/savings-actions";
@@ -10,8 +11,11 @@ import type { Circle } from "@/lib/types";
 export const runtime = "nodejs";
 
 /**
- * Contribute USDC to a circle's pot. The pot is the circle creator's Arc wallet
- * (matching how the circle dashboard reads on-chain activity).
+ * Contribute USDC to a circle's pot. The pot is the shared platform vault (the
+ * single SCA wallet that also holds SafeLock principal and bonds), NOT the
+ * creator's personal wallet — so no member ever has to trust the creator to
+ * custody the pool. Per-circle attribution lives in the ledger (circle_id), and
+ * the dashboard reads it back via the circle_pot_* RPCs (migration 0019).
  */
 export async function POST(
   request: Request,
@@ -51,14 +55,15 @@ export async function POST(
     );
   }
 
-  // Resolve the pot wallet (circle creator's Arc address).
-  const { data: creator } = await supabase
-    .from("profiles")
-    .select("arc_wallet_address")
-    .eq("id", circle.created_by)
-    .single<{ arc_wallet_address: string | null }>();
-
-  const potAddress = creator?.arc_wallet_address ?? null;
+  // Resolve the pot wallet = the shared platform vault (not the creator).
+  let potAddress: string | null = null;
+  if (isCircleConfigured()) {
+    try {
+      potAddress = (await ensureVault()).address;
+    } catch {
+      potAddress = null;
+    }
+  }
   const wallet = await getUserWallet(supabase, user.id);
   const currency = circle.currency;
 

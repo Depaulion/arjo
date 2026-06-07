@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { isCircleConfigured } from "@/lib/circle";
+import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
-import { getUserWallet } from "@/lib/savings-actions";
 import { shortenHex } from "@/lib/arc";
 import type { Circle, Proposal } from "@/lib/types";
 
@@ -188,10 +188,16 @@ export async function POST(
     );
   }
 
-  const wallet = await getUserWallet(supabase, user.id); // pot = creator wallet
-  if (!wallet.walletId) {
+  // The refund is paid FROM the platform vault (the pot), not the creator.
+  let vault: { walletId: string; address: string } | null = null;
+  try {
+    vault = await ensureVault();
+  } catch {
+    vault = null;
+  }
+  if (!vault?.walletId) {
     return NextResponse.json(
-      { error: "Your wallet isn't ready yet. Try again in a moment." },
+      { error: "The platform vault isn't ready yet. Try again in a moment." },
       { status: 409 }
     );
   }
@@ -210,7 +216,7 @@ export async function POST(
 
   try {
     const res = await sendUsdc({
-      fromWalletId: wallet.walletId,
+      fromWalletId: vault.walletId,
       toAddress: member.payout_address,
       amount: refund,
       idempotencyKey: ledger.id,
