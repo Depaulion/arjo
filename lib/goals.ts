@@ -11,7 +11,7 @@
  * Pure module: no I/O, safe on client or server.
  */
 import type { SavingsPlan } from "@/lib/types";
-import { accrueYield, effectiveApy } from "@/lib/yield-engine";
+import { accrueYield, effectiveApy, periodYield } from "@/lib/yield-engine";
 
 export type GoalFunding = {
   /** Principal + accrued yield across active linked plans. */
@@ -20,6 +20,10 @@ export type GoalFunding = {
   principal: number;
   /** USYC yield accrued so far across linked plans. */
   earned: number;
+  /** Yield this goal's vaults made over the last 24h (sub-cent, unrounded). */
+  earnedToday: number;
+  /** Yield this goal's vaults made over the last 7 days (sub-cent, unrounded). */
+  earnedThisWeek: number;
   /** Number of active plans linked to the goal. */
   count: number;
 };
@@ -30,15 +34,33 @@ export function goalFunding(goalId: string, plans: SavingsPlan[]): GoalFunding {
   );
   let principal = 0;
   let earned = 0;
+  let earnedToday = 0;
+  let earnedThisWeek = 0;
   for (const p of linked) {
     principal += p.principal;
     if (p.apy_bonus > 0 && p.principal > 0) {
-      earned += accrueYield({
+      const apy = effectiveApy(p.apy_bonus);
+      earned += accrueYield({ principal: p.principal, from: p.created_at, apy });
+      earnedToday += periodYield({
         principal: p.principal,
         from: p.created_at,
-        apy: effectiveApy(p.apy_bonus),
+        windowDays: 1,
+        apy,
+      });
+      earnedThisWeek += periodYield({
+        principal: p.principal,
+        from: p.created_at,
+        windowDays: 7,
+        apy,
       });
     }
   }
-  return { funded: principal + earned, principal, earned, count: linked.length };
+  return {
+    funded: principal + earned,
+    principal,
+    earned,
+    earnedToday,
+    earnedThisWeek,
+    count: linked.length,
+  };
 }

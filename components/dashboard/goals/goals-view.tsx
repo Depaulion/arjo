@@ -15,7 +15,12 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ARC_STABLECOINS, type ArcStablecoin } from "@/lib/arc";
 import type { SavingsGoal, SavingsPlan } from "@/lib/types";
-import { USYC_BASE_APY, daysBetween, projectYield } from "@/lib/yield-engine";
+import {
+  USYC_BASE_APY,
+  daysBetween,
+  formatYieldAmount,
+  projectYield,
+} from "@/lib/yield-engine";
 import { goalFunding } from "@/lib/goals";
 import { goalEmoji } from "@/components/dashboard/home/primary-goal-card";
 import { Button } from "@/components/ui/button";
@@ -94,18 +99,33 @@ export function GoalsView({
     // Funded per goal = real linked-vault money, capped at each target.
     let totalSaved = 0;
     let totalEarned = 0;
+    let totalToday = 0;
+    let totalThisWeek = 0;
     let reached = 0;
     for (const g of goals) {
-      const { funded, earned } = goalFunding(g.id, plans);
+      const { funded, earned, earnedToday, earnedThisWeek } = goalFunding(
+        g.id,
+        plans
+      );
       totalSaved += Math.min(funded, g.target_amount);
       totalEarned += earned;
+      totalToday += earnedToday;
+      totalThisWeek += earnedThisWeek;
       if (funded >= g.target_amount) reached += 1;
     }
     const pct =
       totalTarget > 0
         ? Math.min(100, Math.round((totalSaved / totalTarget) * 100))
         : 0;
-    return { totalTarget, totalSaved, totalEarned, reached, pct };
+    return {
+      totalTarget,
+      totalSaved,
+      totalEarned,
+      totalToday,
+      totalThisWeek,
+      reached,
+      pct,
+    };
   }, [goals, plans]);
 
   async function createGoal(e: React.FormEvent) {
@@ -210,6 +230,17 @@ export function GoalsView({
             )}
             <span>· {fmt(balance)} USDC available to allocate</span>
           </p>
+          {summary.totalToday > 0 && (
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+              <span className="font-medium text-emerald-500">
+                +{formatYieldAmount(summary.totalToday)} USDC today
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">
+                +{formatYieldAmount(summary.totalThisWeek)} USDC this week
+              </span>
+            </p>
+          )}
           <p className="mt-2 text-xs text-emerald-500">
             Fund a goal with a SafeLock to earn up to 8% APY, Treasury-backed by
             USYC — your savings grow while you reach it.
@@ -322,7 +353,8 @@ export function GoalsView({
         <div className="grid gap-3 sm:grid-cols-2">
           {goals.map((goal) => {
             // Real money committed to this goal (linked vault principal + yield).
-            const { funded, earned, count } = goalFunding(goal.id, plans);
+            const { funded, earned, earnedToday, earnedThisWeek, count } =
+              goalFunding(goal.id, plans);
             // The actual vaults funding it — shown so the goal feels like a
             // real, backed savings bucket rather than a number.
             const linkedPlans = plans.filter(
@@ -418,6 +450,19 @@ export function GoalsView({
                     <span>Not funded yet</span>
                   )}
                 </div>
+
+                {earnedToday > 0 && (
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                    <span className="font-medium text-emerald-500">
+                      +{formatYieldAmount(earnedToday)} {goal.currency} today
+                    </span>
+                    <span>·</span>
+                    <span>
+                      +{formatYieldAmount(earnedThisWeek)} {goal.currency} this
+                      week
+                    </span>
+                  </p>
+                )}
 
                 {linkedPlans.length > 0 && (
                   <ul className="mt-3 space-y-1.5 border-t border-border/60 pt-3">
