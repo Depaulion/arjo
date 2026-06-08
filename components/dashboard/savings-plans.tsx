@@ -23,6 +23,8 @@ import {
   accrueYield,
   daysBetween,
   effectiveApy,
+  formatYieldAmount,
+  periodYield,
   projectYield,
 } from "@/lib/yield-engine";
 import { Button } from "@/components/ui/button";
@@ -269,6 +271,25 @@ export function SavingsPlans({
               p.apy_bonus > 0 && p.principal > 0
                 ? accrueYield({ principal: p.principal, from: p.created_at, apy })
                 : 0;
+            // Per-period detail: what this vault made today / over the last week.
+            const earnedToday =
+              p.apy_bonus > 0 && p.principal > 0
+                ? periodYield({
+                    principal: p.principal,
+                    from: p.created_at,
+                    windowDays: 1,
+                    apy,
+                  })
+                : 0;
+            const earnedWeek =
+              p.apy_bonus > 0 && p.principal > 0
+                ? periodYield({
+                    principal: p.principal,
+                    from: p.created_at,
+                    windowDays: 7,
+                    apy,
+                  })
+                : 0;
             // For a fixed-term SafeLock, the projected yield at maturity.
             const projectedAtMaturity =
               p.plan_type === "locked" && p.lock_until && p.principal > 0
@@ -337,25 +358,37 @@ export function SavingsPlans({
                   </div>
                 </div>
                 {p.apy_bonus > 0 && (
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                        Yield earned so far
-                      </p>
-                      <p className="text-sm font-semibold text-emerald-500">
-                        +{fmt(earnedSoFar)} {p.currency}
-                      </p>
-                    </div>
-                    {projectedAtMaturity > 0 && (
-                      <div className="text-right">
+                  <div className="mt-3 space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
                         <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          Projected at maturity
+                          Yield earned so far
                         </p>
-                        <p className="text-sm font-semibold">
-                          {fmt(p.principal + projectedAtMaturity)} {p.currency}
+                        <p className="text-sm font-semibold text-emerald-500">
+                          +{fmt(earnedSoFar)} {p.currency}
                         </p>
                       </div>
-                    )}
+                      {projectedAtMaturity > 0 && (
+                        <div className="text-right">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Projected at maturity
+                          </p>
+                          <p className="text-sm font-semibold">
+                            {fmt(p.principal + projectedAtMaturity)} {p.currency}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {/* Per-period detail — what this vault made today / this week. */}
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-t border-emerald-500/10 pt-1.5 text-[11px] text-muted-foreground">
+                      <span className="font-medium text-emerald-500">
+                        +{formatYieldAmount(earnedToday)} {p.currency} today
+                      </span>
+                      <span>·</span>
+                      <span>
+                        +{formatYieldAmount(earnedWeek)} {p.currency} this week
+                      </span>
+                    </p>
                   </div>
                 )}
 

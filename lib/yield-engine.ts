@@ -98,3 +98,72 @@ export function projectYield(params: {
   const growth = Math.pow(1 + dailyRate, days) - 1;
   return round2(principal * growth);
 }
+
+/**
+ * Same daily-compounding math as accrueYield but WITHOUT the 2dp rounding, so
+ * sub-cent figures survive. Internal helper for fine-grained period attribution.
+ */
+function accrueYieldRaw(params: {
+  principal: number;
+  from: Date | string;
+  to?: Date | string;
+  apy?: number;
+}): number {
+  const principal = Math.max(0, params.principal);
+  const apy = params.apy ?? USYC_BASE_APY;
+  const days = daysBetween(params.from, params.to);
+  if (principal <= 0 || apy <= 0 || days <= 0) return 0;
+  const dailyRate = apy / DAYS_PER_YEAR;
+  return principal * (Math.pow(1 + dailyRate, days) - 1);
+}
+
+/**
+ * Yield attributed to the most recent `windowDays` for a principal that has been
+ * compounding since `from`. Computed as the marginal gain of the window:
+ *   accrued(from → to) − accrued(from → to−window)
+ * so it correctly reflects daily compounding (and naturally returns the whole
+ * accrual when the plan is younger than the window). Deliberately UNROUNDED —
+ * sub-cent daily amounts (e.g. 0.0021) would otherwise round away; callers
+ * format with adaptive precision. Never negative.
+ */
+export function periodYield(params: {
+  principal: number;
+  from: Date | string;
+  windowDays: number;
+  to?: Date | string;
+  apy?: number;
+}): number {
+  const to =
+    params.to === undefined
+      ? new Date()
+      : typeof params.to === "string"
+        ? new Date(params.to)
+        : params.to;
+  const windowStart = new Date(to.getTime() - params.windowDays * MS_PER_DAY);
+  const total = accrueYieldRaw({
+    principal: params.principal,
+    from: params.from,
+    to,
+    apy: params.apy,
+  });
+  const beforeWindow = accrueYieldRaw({
+    principal: params.principal,
+    from: params.from,
+    to: windowStart,
+    apy: params.apy,
+  });
+  const gain = total - beforeWindow;
+  return gain > 0 ? gain : 0;
+}
+
+/**
+ * Format a (possibly sub-cent) yield amount for display. Shows 2dp for normal
+ * amounts, but expands to up to 4 significant decimals for tiny values so a
+ * real-but-small daily yield (e.g. "0.0021") is never shown as a flat "0.00".
+ */
+export function formatYieldAmount(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0.00";
+  if (n >= 0.01) return n.toFixed(2);
+  if (n < 0.0001) return "<0.0001";
+  return n.toFixed(4);
+}

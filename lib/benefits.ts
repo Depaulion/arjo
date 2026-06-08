@@ -15,7 +15,12 @@
 
 import type { ArcStablecoin } from "@/lib/arc";
 import type { LedgerEntry, SavingsPlan } from "@/lib/types";
-import { accrueYield, effectiveApy, USYC_BASE_APY } from "@/lib/yield-engine";
+import {
+  accrueYield,
+  effectiveApy,
+  periodYield,
+  USYC_BASE_APY,
+} from "@/lib/yield-engine";
 
 export type BenefitStreamKey = "yield" | "circles" | "rewards" | "protection";
 
@@ -45,6 +50,10 @@ export type BenefitsSnapshot = {
   yieldAccruing: number;
   /** earned + accruing — the headline "money your money made". */
   yieldTotal: number;
+  /** Yield accrued on active principal over the last 24h (sub-cent, unrounded). */
+  yieldToday: number;
+  /** Yield accrued on active principal over the last 7 days (sub-cent, unrounded). */
+  yieldThisWeek: number;
   streams: BenefitStream[];
 };
 
@@ -103,6 +112,34 @@ export function computeBenefits(input: BenefitsInput): BenefitsSnapshot {
     )
   );
   const yieldTotal = round2(yieldEarned + yieldAccruing);
+
+  // Per-period gain on active principal — the "your money made $X today/this
+  // week" detail. Kept unrounded (sub-cent figures matter for small balances);
+  // the UI formats with adaptive precision.
+  const yieldToday = activePlans.reduce(
+    (s, p) =>
+      s +
+      periodYield({
+        principal: p.principal,
+        from: p.created_at,
+        to: now,
+        windowDays: 1,
+        apy: effectiveApy(p.apy_bonus),
+      }),
+    0
+  );
+  const yieldThisWeek = activePlans.reduce(
+    (s, p) =>
+      s +
+      periodYield({
+        principal: p.principal,
+        from: p.created_at,
+        to: now,
+        windowDays: 7,
+        apy: effectiveApy(p.apy_bonus),
+      }),
+    0
+  );
 
   // --- 2. Circle savings ----------------------------------------------------
   const contributed = sumKinds(input.ledger, ["contribution", "autosave"]);
@@ -180,6 +217,8 @@ export function computeBenefits(input: BenefitsInput): BenefitsSnapshot {
     yieldEarned,
     yieldAccruing,
     yieldTotal,
+    yieldToday,
+    yieldThisWeek,
     streams,
   };
 }

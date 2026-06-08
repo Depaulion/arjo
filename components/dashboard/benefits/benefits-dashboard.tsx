@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import type { BenefitsSnapshot, BenefitStreamKey } from "@/lib/benefits";
-import { YIELD_SOURCE } from "@/lib/yield-engine";
+import { YIELD_SOURCE, formatYieldAmount } from "@/lib/yield-engine";
 import type { ArcStablecoin } from "@/lib/arc";
 import {
   Card,
@@ -106,6 +106,17 @@ export function BenefitsDashboard({
             <span>{fmt(benefits.yieldAccruing)} {currency} accruing</span>
             <span>·</span>
             <span>~{apyPct}% APY</span>
+          </p>
+          {/* Per-period detail: what your savings made today / this week. */}
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs">
+            <span className="inline-flex items-center gap-1 font-medium text-emerald-500">
+              <TrendingUp className="h-3.5 w-3.5" />
+              +{formatYieldAmount(benefits.yieldToday)} {currency} today
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">
+              +{formatYieldAmount(benefits.yieldThisWeek)} {currency} this week
+            </span>
           </p>
         </CardContent>
       </Card>
