@@ -50,8 +50,10 @@ const USYC_TOKEN =
 const TELLER =
   process.env.ARC_USYC_TELLER_ADDRESS ||
   "0x9fdF14c5B14173D74C08Af27AebFf39240dC105A";
-const MINT_FN = process.env.ARC_USYC_TELLER_MINT_FN || "buy(uint256)";
-const REDEEM_FN = process.env.ARC_USYC_TELLER_REDEEM_FN || "sell(uint256)";
+// Verified against the deployed Teller implementation (0x238Dc235…adf6).
+const MINT_FN = process.env.ARC_USYC_TELLER_MINT_FN || "deposit(uint256,address)";
+const REDEEM_FN =
+  process.env.ARC_USYC_TELLER_REDEEM_FN || "redeem(uint256,address,address)";
 const VAULT_ADDRESS = process.env.ARC_VAULT_ADDRESS;
 const VAULT_WALLET_ID = process.env.ARC_VAULT_WALLET_ID;
 const DECIMALS = 6;

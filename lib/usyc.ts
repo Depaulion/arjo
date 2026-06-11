@@ -61,15 +61,22 @@ export const USYC_ENTITLEMENTS_ADDRESS =
   "0xcc205224862c7641930c87679e98999d23c26113";
 
 /**
- * Teller function signatures used for contract execution. These are the
- * conventional Teller shapes — deposit USDC to mint USYC, and sell USYC back for
- * USDC — but the EXACT deployed signatures must be confirmed before enabling.
- * Both take a single uint256 amount (in the input token's smallest unit).
+ * Teller function signatures used for contract execution. Defaults are the
+ * VERIFIED signatures of the deployed Arc Testnet Teller (ERC-4626 style,
+ * implementation 0x238Dc235…adf6 behind the TellerProxy):
+ *
+ *   deposit(uint256 assets, address receiver)         — USDC in, USYC minted
+ *   redeem(uint256 shares, address receiver, address owner) — USYC in, USDC out
+ *
+ * Parameters are filled positionally from the signature: every uint256 gets the
+ * amount (smallest units) and every address gets the vault's own address
+ * (receiver/owner — the wallet executing the call). Env-overridable in case a
+ * future deployment changes shape.
  */
 const TELLER_MINT_FN =
-  process.env.ARC_USYC_TELLER_MINT_FN ?? "buy(uint256)";
+  process.env.ARC_USYC_TELLER_MINT_FN ?? "deposit(uint256,address)";
 const TELLER_REDEEM_FN =
-  process.env.ARC_USYC_TELLER_REDEEM_FN ?? "sell(uint256)";
+  process.env.ARC_USYC_TELLER_REDEEM_FN ?? "redeem(uint256,address,address)";
 
 export type YieldMode = "live" | "simulated";
 
@@ -118,7 +125,33 @@ function extractTx(res: unknown): UsycTxResult {
   return { circleTxId: id, txHash: data?.txHash ?? null, state: data?.state ?? null };
 }
 
-/** Shared contract-execution call against a Teller function taking one uint256. */
+/**
+ * Positional ABI parameters for a Teller call, derived from the signature:
+ * uint256 → the amount (smallest units); address → the vault's own address
+ * (the executing wallet, used as receiver and owner). Throws on any other type
+ * so a misconfigured signature fails loudly instead of sending a bad call.
+ */
+function tellerAbiParameters(fn: string, amountUnits: string): string[] {
+  const match = fn.match(/\(([^)]*)\)/);
+  const types = match && match[1]
+    ? match[1].split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
+  return types.map((t) => {
+    if (t.startsWith("uint")) return amountUnits;
+    if (t === "address") {
+      const self = process.env.ARC_VAULT_ADDRESS;
+      if (!self) {
+        throw new Error(
+          `Teller signature ${fn} needs the vault address; set ARC_VAULT_ADDRESS.`
+        );
+      }
+      return self;
+    }
+    throw new Error(`Unsupported Teller parameter type "${t}" in ${fn}.`);
+  });
+}
+
+/** Shared contract-execution call against a configured Teller function. */
 async function executeTeller(params: {
   walletId: string;
   fn: string;
@@ -136,7 +169,7 @@ async function executeTeller(params: {
     walletId: params.walletId,
     contractAddress: USYC_TELLER_ADDRESS,
     abiFunctionSignature: params.fn,
-    abiParameters: [params.amountUnits],
+    abiParameters: tellerAbiParameters(params.fn, params.amountUnits),
     fee: { type: "level", config: { feeLevel: "MEDIUM" } },
     ...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
     ...(params.refId ? { refId: params.refId } : {}),
