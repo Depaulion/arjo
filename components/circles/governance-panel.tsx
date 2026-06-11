@@ -532,6 +532,18 @@ function ProposalCard({
     0,
     proposal.memberCount - proposal.yesCount - proposal.noCount,
   );
+  // Concrete distance to approval: how many YES votes are still missing.
+  const votesNeeded = Math.max(
+    0,
+    Math.ceil((proposal.threshold_pct / 100) * proposal.memberCount) -
+      proposal.yesCount,
+  );
+  const raisedBy = memberById.get(proposal.created_by);
+  const ageDays = Math.floor(
+    (Date.now() - new Date(proposal.created_at).getTime()) / 86_400_000,
+  );
+  const ageLabel =
+    ageDays <= 0 ? "today" : ageDays === 1 ? "yesterday" : `${ageDays} days ago`;
   const canCancel =
     open && (isCreator || proposal.created_by === currentUserId);
 
@@ -613,18 +625,30 @@ function ProposalCard({
             Member: {memberLabel(target, currentUserId)}
           </CardDescription>
         )}
+        <CardDescription className="text-xs">
+          Raised {ageLabel} by {memberLabel(raisedBy, currentUserId)}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Tally bar */}
+        {/* Tally bar with the approval threshold marked */}
         <div className="space-y-2">
-          <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full bg-primary"
-              style={{ width: `${yesPct}%` }}
-            />
-            <div
-              className="h-full bg-destructive/70"
-              style={{ width: `${noPct}%` }}
+          <div className="relative">
+            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary"
+                style={{ width: `${yesPct}%` }}
+              />
+              <div
+                className="h-full bg-destructive/70"
+                style={{ width: `${noPct}%` }}
+              />
+            </div>
+            {/* Threshold tick: the YES bar must reach this line to pass. */}
+            <span
+              aria-hidden
+              className="absolute -top-1 bottom-[-4px] w-0.5 rounded-full bg-foreground/70"
+              style={{ left: `${proposal.threshold_pct}%` }}
+              title={`Passes at ${proposal.threshold_pct}% YES`}
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
@@ -635,9 +659,20 @@ function ProposalCard({
               NO: {proposal.noCount} ({noPct}%)
             </span>
             <span className="text-muted-foreground">
-              {notVoted} not voted · needs {proposal.threshold_pct}% YES
+              {notVoted} not voted · passes at {proposal.threshold_pct}%
             </span>
           </div>
+          {open && (
+            <p
+              className={`text-xs font-medium ${
+                votesNeeded === 0 ? "text-emerald-500" : "text-muted-foreground"
+              }`}
+            >
+              {votesNeeded === 0
+                ? "Threshold reached — approval executes on the next vote sync."
+                : `${votesNeeded} more YES vote${votesNeeded === 1 ? "" : "s"} needed to pass.`}
+            </p>
+          )}
         </div>
 
         {/* Vote actions */}
