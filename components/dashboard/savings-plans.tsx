@@ -29,6 +29,7 @@ import {
   periodYield,
   projectYield,
 } from "@/lib/yield-engine";
+import { goalEmoji } from "@/components/dashboard/home/primary-goal-card";
 import { Button } from "@/components/ui/button";
 
 function fmt(n: number) {
@@ -53,7 +54,15 @@ function formatDate(iso: string | null) {
  */
 const PLAN_META: Record<
   SavingsPlanType,
-  { label: string; icon: React.ReactNode; tint: string; apy: number; tagline: string }
+  {
+    label: string;
+    icon: React.ReactNode;
+    tint: string;
+    apy: number;
+    tagline: string;
+    /** Cowrywise-style cover gradient for the plan card's header strip. */
+    cover: string;
+  }
 > = {
   locked: {
     label: "SafeLock",
@@ -61,6 +70,7 @@ const PLAN_META: Record<
     tint: "bg-primary/15 text-primary",
     apy: 8,
     tagline: "Highest yield · fixed term",
+    cover: "from-primary/30 via-primary/15 to-accent/20",
   },
   target: {
     label: "Target",
@@ -68,6 +78,7 @@ const PLAN_META: Record<
     tint: "bg-accent/15 text-accent-foreground",
     apy: 4,
     tagline: "Save toward an amount",
+    cover: "from-accent/30 via-accent/15 to-sky-500/20",
   },
   auto: {
     label: "Auto-save",
@@ -75,6 +86,7 @@ const PLAN_META: Record<
     tint: "bg-primary/15 text-primary",
     apy: 2,
     tagline: "Set-and-forget recurring",
+    cover: "from-emerald-500/25 via-emerald-500/10 to-primary/15",
   },
   flex: {
     label: "Flexible",
@@ -82,6 +94,7 @@ const PLAN_META: Record<
     tint: "bg-secondary text-muted-foreground",
     apy: 0,
     tagline: "Withdraw anytime · no lock",
+    cover: "from-secondary via-secondary/60 to-secondary/30",
   },
 };
 
@@ -310,33 +323,58 @@ export function SavingsPlans({
                     apy,
                   })
                 : 0;
+            // SafeLock term progress: how far through the lock the saver is.
+            const termDays =
+              p.plan_type === "locked" && p.lock_until
+                ? daysBetween(p.created_at, p.lock_until)
+                : 0;
+            const termElapsed =
+              p.plan_type === "locked" && p.lock_until
+                ? daysBetween(p.created_at)
+                : 0;
+            const termPct =
+              termDays > 0
+                ? Math.min(100, Math.round((termElapsed / termDays) * 100))
+                : 0;
+            const daysLeft =
+              termDays > 0 ? Math.max(0, Math.ceil(termDays - termElapsed)) : 0;
+            // Target progress: balance vs the amount being saved toward.
+            const targetPct =
+              p.plan_type === "target" && p.target_amount && p.target_amount > 0
+                ? Math.min(
+                    100,
+                    Math.round((p.principal / p.target_amount) * 100)
+                  )
+                : 0;
             return (
               <li
                 key={p.id}
-                className="rounded-xl border border-border bg-secondary/30 p-4"
+                className="overflow-hidden rounded-2xl border border-border bg-secondary/30"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.tint}`}
-                    >
-                      {meta.icon}
+                {/* Cover strip — Cowrywise-style plan identity at a glance. */}
+                <div
+                  className={`flex items-center justify-between gap-3 bg-gradient-to-r px-4 py-3 ${meta.cover}`}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-background/60 text-xl backdrop-blur-sm">
+                      {goalEmoji(p.name)}
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">{p.name}</p>
+                        <p className="truncate font-semibold">{p.name}</p>
                         {p.apy_bonus > 0 && (
-                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
+                          <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
                             {p.apy_bonus}% APY
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {meta.label} · {fmt(p.principal)} {p.currency} balance
+                      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        {meta.icon}
+                        {meta.label} · {fmt(p.principal)} {p.currency}
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
                     {p.plan_type === "auto" ? (
                       <Button
                         size="sm"
@@ -368,6 +406,38 @@ export function SavingsPlans({
                     )}
                   </div>
                 </div>
+
+                <div className="p-4 pt-3">
+                {/* SafeLock: progress through the lock term. */}
+                {p.plan_type === "locked" && termDays > 0 && (
+                  <div className="mb-3 space-y-1">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all"
+                        style={{ width: `${termPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {termPct}% through the lock ·{" "}
+                      {daysLeft > 0 ? `${daysLeft} days to maturity` : "matured 🎉"}
+                    </p>
+                  </div>
+                )}
+                {/* Target: progress toward the amount. */}
+                {p.plan_type === "target" && (p.target_amount ?? 0) > 0 && (
+                  <div className="mb-3 space-y-1">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-accent to-sky-400 transition-all"
+                        style={{ width: `${targetPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {targetPct}% of {fmt(p.target_amount ?? 0)} {p.currency}
+                      {targetPct >= 100 ? " — target reached 🎉" : ""}
+                    </p>
+                  </div>
+                )}
                 {p.apy_bonus > 0 && (
                   <div className="mt-3 space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
@@ -447,6 +517,7 @@ export function SavingsPlans({
                     </select>
                   </div>
                 )}
+                </div>
               </li>
             );
           })}
