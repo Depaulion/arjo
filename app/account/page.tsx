@@ -24,6 +24,7 @@ import { ARC_TESTNET, arcAddressUrl } from "@/lib/arc";
 import { getDashboardSnapshot } from "@/lib/dashboard";
 import { computeBenefits } from "@/lib/benefits";
 import { goalFunding } from "@/lib/goals";
+import { effectiveApy, periodYield } from "@/lib/yield-engine";
 import { isUsycEnabled } from "@/lib/usyc";
 import { getPersistedNotifications } from "@/lib/notifications";
 import {
@@ -237,6 +238,22 @@ export default async function AccountPage() {
   const vaultLocked = allPlans
     .filter((p) => p.status === "active")
     .reduce((s, p) => s + p.principal, 0);
+
+  // What those vaults earned in the last 24h — shown live on the balance card
+  // so the saver sees their money working every day, not just at maturity.
+  const earnedToday = allPlans
+    .filter((p) => p.status === "active" && p.apy_bonus > 0 && p.principal > 0)
+    .reduce(
+      (s, p) =>
+        s +
+        periodYield({
+          principal: p.principal,
+          from: p.created_at,
+          windowDays: 1,
+          apy: effectiveApy(p.apy_bonus),
+        }),
+      0
+    );
 
   const onChainEnabled =
     isCircleConfigured() &&
@@ -515,6 +532,7 @@ export default async function AccountPage() {
             available={availableBalance ?? 0}
             locked={vaultLocked}
             monthDelta={monthDelta}
+            earnedToday={earnedToday}
             currency={safeProfile.preferred_stablecoin}
           />
 

@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, DollarSign, Eye, EyeOff, Lock } from "lucide-react";
+import {
+  ArrowUpRight,
+  DollarSign,
+  Eye,
+  EyeOff,
+  Lock,
+  TrendingUp,
+} from "lucide-react";
+
+import { formatYieldAmount } from "@/lib/yield-engine";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", {
@@ -13,13 +22,15 @@ function fmt(n: number) {
 /**
  * Hero balance card — the single most important element on Home. Answers
  * "how much do I have?" at a glance: total savings up top, with the available
- * and locked split below. Tap the eye to privacy-hide the figures.
+ * and locked split below, plus what the vaults earned in the last 24h so the
+ * money visibly works every day. Tap the eye to privacy-hide the figures.
  */
 export function BalanceCard({
   total,
   available,
   locked,
   monthDelta,
+  earnedToday = 0,
   currency,
 }: {
   total: number;
@@ -27,6 +38,8 @@ export function BalanceCard({
   locked: number;
   /** Net inflow this calendar month, for the "+X this month" pill. */
   monthDelta: number;
+  /** USYC yield the user's vaults accrued in the last 24h (may be sub-cent). */
+  earnedToday?: number;
   currency: string;
 }) {
   const [hidden, setHidden] = useState(false);
@@ -69,11 +82,25 @@ export function BalanceCard({
           </span>
         </p>
 
-        {monthDelta > 0 && (
-          <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium backdrop-blur">
-            <ArrowUpRight className="h-3.5 w-3.5" />
-            +{hidden ? mask : fmt(monthDelta)} {currency} this month
-          </span>
+        {(monthDelta > 0 || earnedToday > 0) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {monthDelta > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium backdrop-blur">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                +{hidden ? mask : fmt(monthDelta)} {currency} this month
+              </span>
+            )}
+            {earnedToday > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2.5 py-1 text-xs font-semibold text-emerald-50 backdrop-blur"
+                title="USYC yield your vaults accrued in the last 24 hours"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                +{hidden ? mask : formatYieldAmount(earnedToday)} {currency}{" "}
+                earned today
+              </span>
+            )}
+          </div>
         )}
 
         <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/15 pt-4">
