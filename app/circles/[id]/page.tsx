@@ -557,6 +557,7 @@ export default async function CircleDashboardPage({
                 isMember={governance.isMember}
                 isCreator={governance.isCreator}
                 currency={data.currency}
+                contributionAmount={data.contributionAmount ?? 0}
               />
             }
           />

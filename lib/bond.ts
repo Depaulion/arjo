@@ -28,6 +28,70 @@ import { USYC_BASE_APY, accrueYield } from "@/lib/yield-engine";
 export const BOND_APY = USYC_BASE_APY;
 
 /**
+ * Safety buffer above one round's contribution that the recommended bond adds.
+ *
+ * THE COVERAGE MODEL
+ * ------------------
+ * A defaulting member costs the group, at minimum, one missed contribution C.
+ * The slash recovers the member's whole bond position (principal + accrued
+ * yield), so the group is made whole when:
+ *
+ *   bond × (1 + APY/365)^days  ≥  C × (1 + buffer)
+ *
+ * Setting bond = 1.1 × C makes that hold from DAY ZERO — a slash covers the
+ * missed round in full plus a 10% penalty that compensates the group for the
+ * disruption. Because the held bond compounds daily at the USYC rate, coverage
+ * only grows from there: defaults that happen late in a circle (the riskiest,
+ * since early payout receivers have the most incentive to walk away) are met
+ * by a strictly larger position. Risk surcharges (2×/3× for low-reputation
+ * joiners) stack on top of this base.
+ */
+export const BOND_COVERAGE_BUFFER = 0.1;
+
+/**
+ * Recommended bond for a circle whose per-round contribution is `contribution`:
+ * 110% of one round, rounded to 2dp. This is the creator-facing default and the
+ * enforced minimum when bonds are enabled.
+ */
+export function recommendedBond(contribution: number): number {
+  if (!Number.isFinite(contribution) || contribution <= 0) return 0;
+  return Math.round(contribution * (1 + BOND_COVERAGE_BUFFER) * 100) / 100;
+}
+
+export type BondCoverage = {
+  /** Current slashable position: principal + accrued yield. */
+  position: number;
+  /** position ÷ one round's contribution, as a percent (110 = covers 1.1×). */
+  coveragePct: number;
+  /** What remains after making the group whole for one missed round. */
+  surplus: number;
+  /** True when a slash today fully covers a missed contribution. */
+  coversMissedRound: boolean;
+};
+
+/**
+ * Live coverage of a held bond against one round's contribution — how much of
+ * a missed round a slash today would recover, including the yield earned since
+ * the bond was posted.
+ */
+export function bondCoverage(
+  amount: number,
+  startedAt: string | null | undefined,
+  contribution: number,
+  to: Date | string = new Date()
+): BondCoverage {
+  const { total } = bondPosition(amount, startedAt, to);
+  const c = Math.max(0, contribution);
+  const coveragePct = c > 0 ? Math.round((total / c) * 100) : 0;
+  return {
+    position: total,
+    coveragePct,
+    surplus: Math.round((total - c) * 100) / 100,
+    coversMissedRound: c > 0 && total >= c,
+  };
+}
+
+/**
  * Yield accrued on a held bond of `amount`, posted at `startedAt`, up to `to`
  * (defaults to now). Returns the gain only (excludes principal), rounded to 2dp.
  * Returns 0 for a zero/negative bond or a missing start timestamp (legacy rows

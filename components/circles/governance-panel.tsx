@@ -22,7 +22,7 @@ import {
 
 import { shortenHex } from "@/lib/arc";
 import type { ArcStablecoin } from "@/lib/arc";
-import { BOND_APY, bondPosition } from "@/lib/bond";
+import { BOND_APY, bondCoverage, bondPosition } from "@/lib/bond";
 import {
   PROPOSAL_TYPES,
   type ProposalStatus,
@@ -78,6 +78,7 @@ export function GovernancePanel({
   isMember,
   isCreator,
   currency,
+  contributionAmount = 0,
 }: {
   circleId: string;
   currentUserId: string | null;
@@ -86,6 +87,8 @@ export function GovernancePanel({
   isMember: boolean;
   isCreator: boolean;
   currency: ArcStablecoin;
+  /** Per-round contribution — lets bond rows show live default coverage. */
+  contributionAmount?: number;
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
@@ -235,6 +238,7 @@ export function GovernancePanel({
                     member={m}
                     currentUserId={currentUserId}
                     currency={currency}
+                    contributionAmount={contributionAmount}
                   />
                 ))}
             </ul>
@@ -276,11 +280,13 @@ function MemberResolutionRow({
   member,
   currentUserId,
   currency,
+  contributionAmount = 0,
 }: {
   circleId: string;
   member: GovMember;
   currentUserId: string | null;
   currency: ArcStablecoin;
+  contributionAmount?: number;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<
@@ -392,6 +398,25 @@ function MemberResolutionRow({
               </span>
             )}
           </p>
+          {heldBond && contributionAmount > 0 && (() => {
+            const cov = bondCoverage(
+              member.bond_amount,
+              member.bond_started_at,
+              contributionAmount
+            );
+            return (
+              <p
+                className={`text-xs ${
+                  cov.coversMissedRound ? "text-emerald-500" : "text-amber-500"
+                }`}
+              >
+                Covers {cov.coveragePct}% of a missed round
+                {cov.coversMissedRound &&
+                  cov.surplus > 0 &&
+                  ` (+${fmt2(cov.surplus)} ${currency} penalty cushion)`}
+              </p>
+            );
+          })()}
         </div>
         {statusBadge}
       </div>

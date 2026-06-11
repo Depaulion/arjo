@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CIRCLE_FREQUENCIES, type CircleFrequency } from "@/lib/types";
 import type { ArcStablecoin } from "@/lib/arc";
+import { BOND_APY, recommendedBond } from "@/lib/bond";
 import { Button } from "@/components/ui/button";
 
 export function CreateCircleForm({
@@ -23,19 +24,31 @@ export function CreateCircleForm({
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<CircleFrequency>("monthly");
   const [memberCount, setMemberCount] = useState("8");
+  const [bondEnabled, setBondEnabled] = useState(true);
   const [requiredBond, setRequiredBond] = useState("");
+  // Tracks whether the creator typed a custom bond; until then the field
+  // follows the 110% recommendation as the contribution changes.
+  const [bondTouched, setBondTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const contribution = Number(amount);
+  const suggestedBond = recommendedBond(contribution);
+  // The bond actually submitted: the recommendation unless overridden upward.
+  const bondValue = bondEnabled
+    ? bondTouched && requiredBond.trim() !== ""
+      ? Number(requiredBond)
+      : suggestedBond
+    : 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const contribution = Number(amount);
     const members = Number(memberCount);
-    const bond = requiredBond.trim() === "" ? 0 : Number(requiredBond);
+    const bond = bondValue;
 
     if (!name.trim()) {
       setError("Give your circle a name.");
@@ -49,8 +62,10 @@ export function CreateCircleForm({
       setError("A circle needs between 2 and 100 members.");
       return;
     }
-    if (!Number.isFinite(bond) || bond < 0) {
-      setError("Bond must be zero or a positive amount.");
+    if (bondEnabled && (!Number.isFinite(bond) || bond < suggestedBond)) {
+      setError(
+        `The bond must be at least ${suggestedBond.toLocaleString()} ${currency} — 110% of one contribution — so a slash always covers a missed round plus a 10% penalty.`
+      );
       return;
     }
 
@@ -62,7 +77,7 @@ export function CreateCircleForm({
       currency,
       frequency,
       member_count: members,
-      required_bond: bond,
+      required_bond: Math.round(bond * 100) / 100,
       description: description.trim() || null,
       is_public: isPublic,
     });
@@ -159,32 +174,91 @@ export function CreateCircleForm({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="requiredBond" className="text-sm font-medium">
-          Member bond <span className="text-muted-foreground">(optional)</span>
-        </label>
-        <div className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
-          <input
-            id="requiredBond"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="0.01"
-            value={requiredBond}
-            onChange={(e) => setRequiredBond(e.target.value)}
-            placeholder="0"
-            className="h-11 w-full rounded-xl bg-transparent px-4 text-sm focus:outline-none"
-          />
-          <span className="px-4 text-sm font-semibold text-muted-foreground">
-            {currency}
-          </span>
+      <div className="space-y-2 rounded-2xl border border-input bg-background/60 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Member bond</p>
+            <p className="text-xs text-muted-foreground">
+              A refundable stake each member posts to join, held in the vault
+              until they finish in good standing.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={bondEnabled}
+            aria-label="Toggle member bond"
+            onClick={() => setBondEnabled((v) => !v)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              bondEnabled ? "bg-primary" : "bg-secondary"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                bondEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          A refundable stake each member posts to join. Held in the vault, it
-          earns ~8% APY (USYC, Treasury-backed) while locked — returned with the
-          yield when they complete the circle, or forfeited if they default.
-          Higher-risk members may be asked for 2–3×. Leave at 0 for no bond.
-        </p>
+
+        {bondEnabled && (
+          <>
+            <div className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+              <input
+                id="requiredBond"
+                type="number"
+                inputMode="decimal"
+                min={suggestedBond || 0}
+                step="0.01"
+                value={
+                  bondTouched ? requiredBond : suggestedBond > 0 ? String(suggestedBond) : ""
+                }
+                onChange={(e) => {
+                  setBondTouched(true);
+                  setRequiredBond(e.target.value);
+                }}
+                placeholder={suggestedBond > 0 ? String(suggestedBond) : "—"}
+                className="h-11 w-full rounded-xl bg-transparent px-4 text-sm focus:outline-none"
+                aria-label={`Member bond in ${currency}`}
+              />
+              <span className="px-4 text-sm font-semibold text-muted-foreground">
+                {currency}
+              </span>
+            </div>
+
+            {contribution > 0 ? (
+              <div className="space-y-1 rounded-xl bg-emerald-500/5 px-3 py-2 text-xs">
+                <p className="font-medium text-emerald-500">
+                  Why {suggestedBond.toLocaleString()} {currency}? It&apos;s 110%
+                  of one contribution.
+                </p>
+                <p className="text-muted-foreground">
+                  If a member defaults, slashing their bond repays the missed{" "}
+                  {contribution.toLocaleString()} {currency} in full <em>and</em>{" "}
+                  leaves a 10% penalty for the group — from day one. The bond
+                  also earns ~{Math.round(BOND_APY * 100)}% APY (USYC,
+                  Treasury-backed) while held, so coverage keeps growing the
+                  longer the circle runs. Members who finish cleanly get the
+                  bond back <span className="font-medium text-emerald-500">plus the yield</span>.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Enter a contribution amount above and we&apos;ll suggest the
+                right bond (110% of one round).
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Higher-risk members are automatically surcharged 2–3× this base.
+            </p>
+          </>
+        )}
+        {!bondEnabled && (
+          <p className="text-xs text-amber-500">
+            Without a bond the group has no recovery if a member defaults —
+            recommended only for circles of people who fully trust each other.
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
