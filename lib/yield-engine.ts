@@ -36,6 +36,27 @@ export const YIELD_SOURCE = {
  */
 export const USYC_BASE_APY = 0.08;
 
+/**
+ * SafeLock rate ladder (Cowrywise-style): the longer the lock, the more of the
+ * USYC rate is passed through, topping out at the full pass-through for 6+
+ * months. The spread retained on shorter locks pays for their flexibility —
+ * no tier ever promises more than USYC actually earns, so every rate is honest.
+ */
+export const LOCK_TIERS = [
+  { minDays: 180, apyPct: 8, label: "6+ months" },
+  { minDays: 90, apyPct: 7, label: "3–6 months" },
+  { minDays: 30, apyPct: 6, label: "1–3 months" },
+  { minDays: 0, apyPct: 5, label: "Under 1 month" },
+] as const;
+
+/** APY (as a percent, e.g. 8) a SafeLock of `days` duration earns. */
+export function lockApyPct(days: number): number {
+  for (const tier of LOCK_TIERS) {
+    if (days >= tier.minDays) return tier.apyPct;
+  }
+  return LOCK_TIERS[LOCK_TIERS.length - 1].apyPct;
+}
+
 /** Days the yield model compounds over per year. */
 const DAYS_PER_YEAR = 365;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;

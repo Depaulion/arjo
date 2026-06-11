@@ -8,6 +8,7 @@ import { recordLedgerEntry, settleLedgerEntry } from "@/lib/ledger";
 import { getUserWallet, applyGamification } from "@/lib/savings-actions";
 import { isUsycEnabled, mintUsycFromUsdc } from "@/lib/usyc";
 import { getUsdcBalance } from "@/lib/arc-onchain";
+import { daysBetween, lockApyPct } from "@/lib/yield-engine";
 import type { AutoCadence, SavingsPlan, SavingsPlanType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -15,10 +16,14 @@ export const runtime = "nodejs";
 const PLAN_TYPES: SavingsPlanType[] = ["flex", "locked", "target", "auto"];
 const CADENCES: AutoCadence[] = ["daily", "weekly", "monthly"];
 
-/** Annualised bonus (%) we credit by plan type. Flex earns nothing. */
+/**
+ * Annualised bonus (%) we credit by plan type. Flex earns nothing. SafeLock is
+ * tiered by duration (lib/yield-engine LOCK_TIERS — longer lock, higher rate),
+ * so its entry here is only the fallback when no lock date resolves.
+ */
 const APY_BONUS: Record<SavingsPlanType, number> = {
   flex: 0,
-  locked: 8,
+  locked: 5,
   target: 4,
   auto: 2,
 };
@@ -94,6 +99,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // SafeLock rate is tiered by duration (longer lock → higher pass-through).
+  const apyBonus =
+    planType === "locked" && lockUntil
+      ? lockApyPct(daysBetween(new Date(), lockUntil))
+      : APY_BONUS[planType];
+
   // If a goal was named, confirm it belongs to this user before linking (the
   // FK + RLS would also reject a foreign id, but we fail fast with a clear msg).
   let linkedGoalId: string | null = null;
@@ -143,7 +154,7 @@ export async function POST(request: Request) {
       auto_amount: autoAmount,
       next_run_at: autoCadence ? nextRun(autoCadence) : null,
       target_amount: targetAmount,
-      apy_bonus: APY_BONUS[planType],
+      apy_bonus: apyBonus,
       status: "active",
       vault_address: vaultAddress,
       goal_id: linkedGoalId,

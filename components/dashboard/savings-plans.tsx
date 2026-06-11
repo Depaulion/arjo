@@ -20,10 +20,12 @@ import type {
   SavingsPlanType,
 } from "@/lib/types";
 import {
+  LOCK_TIERS,
   accrueYield,
   daysBetween,
   effectiveApy,
   formatYieldAmount,
+  lockApyPct,
   periodYield,
   projectYield,
 } from "@/lib/yield-engine";
@@ -44,8 +46,10 @@ function formatDate(iso: string | null) {
 
 /**
  * Per-plan-type presentation. `apy` MUST match APY_BONUS in
- * app/api/savings/lock/route.ts (locked 8 / target 4 / auto 2 / flex 0) so the
- * rate shown at decision time is the rate actually credited.
+ * app/api/savings/lock/route.ts (target 4 / auto 2 / flex 0) so the rate shown
+ * at decision time is the rate actually credited. SafeLock is duration-tiered
+ * (LOCK_TIERS); its entry here is the ladder's top rate for the type cards,
+ * and the create-form preview recomputes from the chosen date.
  */
 const PLAN_META: Record<
   SavingsPlanType,
@@ -232,7 +236,6 @@ export function SavingsPlans({
   // their deposit is projected to earn before they commit. Uses the same
   // daily-compounded USYC model the vault credits on withdrawal.
   const previewMeta = PLAN_META[planType];
-  const previewApy = effectiveApy(previewMeta.apy);
   const previewPrincipal =
     planType === "auto" ? Number(autoAmount) : Number(amount);
   // Horizon: SafeLock uses the chosen lock term; everything else projects 1 yr.
@@ -240,8 +243,16 @@ export function SavingsPlans({
     planType === "locked" && lockUntil
       ? daysBetween(new Date(), lockUntil)
       : 365;
+  // SafeLock rate depends on the chosen duration (LOCK_TIERS ladder).
+  const previewApyPct =
+    planType === "locked"
+      ? lockUntil
+        ? lockApyPct(previewDays)
+        : 0
+      : previewMeta.apy;
+  const previewApy = effectiveApy(previewApyPct);
   const previewYield =
-    previewMeta.apy > 0 &&
+    previewApyPct > 0 &&
     Number.isFinite(previewPrincipal) &&
     previewPrincipal > 0
       ? projectYield({
@@ -485,7 +496,11 @@ export function SavingsPlans({
                         : "bg-secondary text-muted-foreground"
                     }`}
                   >
-                    {PLAN_META[t].apy > 0 ? `${PLAN_META[t].apy}% APY` : "0% APY"}
+                    {t === "locked"
+                      ? "up to 8% APY"
+                      : PLAN_META[t].apy > 0
+                      ? `${PLAN_META[t].apy}% APY`
+                      : "0% APY"}
                   </span>
                 </button>
               )
@@ -655,6 +670,37 @@ export function SavingsPlans({
             </div>
           )}
 
+          {/* SafeLock rate ladder — longer lock, higher pass-through. */}
+          {planType === "locked" && (
+            <div className="grid grid-cols-4 gap-1.5">
+              {[...LOCK_TIERS].reverse().map((tier) => {
+                const active =
+                  Boolean(lockUntil) && lockApyPct(previewDays) === tier.apyPct;
+                return (
+                  <div
+                    key={tier.minDays}
+                    className={`rounded-xl border px-2 py-2 text-center transition-colors ${
+                      active
+                        ? "border-emerald-500/60 bg-emerald-500/10"
+                        : "border-border/60 bg-card"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm font-bold ${
+                        active ? "text-emerald-500" : "text-foreground"
+                      }`}
+                    >
+                      {tier.apyPct}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {tier.label}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Live earnings preview — what this deposit is projected to earn. */}
           {previewMeta.apy > 0 ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
@@ -663,7 +709,11 @@ export function SavingsPlans({
                   {previewMeta.label} earns
                 </span>
                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
-                  {previewMeta.apy}% APY · USYC
+                  {planType === "locked"
+                    ? lockUntil
+                      ? `${previewApyPct}% APY · USYC`
+                      : "5–8% APY · pick a date"
+                    : `${previewMeta.apy}% APY · USYC`}
                 </span>
               </div>
               {previewYield > 0 ? (
