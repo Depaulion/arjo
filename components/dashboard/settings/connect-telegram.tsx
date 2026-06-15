@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Send } from "lucide-react";
+import { Check, Copy, Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +21,8 @@ export function ConnectTelegram({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
+  const [startCommand, setStartCommand] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function connect() {
     setLoading(true);
@@ -34,7 +36,19 @@ export function ConnectTelegram({
     }
     // Open Telegram with the one-time start code; the webhook completes linking.
     window.open(json.deepLink, "_blank", "noopener,noreferrer");
+    setStartCommand(json.startCommand ?? null);
     setOpened(true);
+  }
+
+  async function copyStart() {
+    if (!startCommand) return;
+    try {
+      await navigator.clipboard.writeText(startCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked — the command is still shown for manual copy */
+    }
   }
 
   async function disconnect() {
@@ -52,7 +66,8 @@ export function ConnectTelegram({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-secondary/30 px-4 py-3">
+    <div className="space-y-3 rounded-xl border border-border bg-secondary/30 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-sky-400">
           <Send className="h-4 w-4" />
@@ -93,6 +108,32 @@ export function ConnectTelegram({
           )}
           Connect
         </Button>
+      )}
+      </div>
+
+      {/* Manual fallback: if the bot was already started, Telegram won't show
+          the START button, so the deep link can't auto-send the code. Sending
+          this command to @Arjoobot by hand always completes the link. */}
+      {!linked && opened && startCommand && (
+        <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+          <p className="text-xs text-muted-foreground">
+            Didn&apos;t connect? Open <span className="font-medium">@Arjoobot</span>{" "}
+            and send it this message:
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 truncate rounded-md bg-secondary px-2 py-1.5 font-mono text-xs">
+              {startCommand}
+            </code>
+            <Button size="sm" variant="outline" onClick={copyStart}>
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-primary" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

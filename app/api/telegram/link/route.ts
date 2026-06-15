@@ -42,7 +42,12 @@ export async function POST() {
 
   return NextResponse.json({
     ok: true,
+    code: data,
     deepLink: `https://t.me/${bot}?start=${data}`,
+    // Manual fallback: if the user already started the bot, Telegram won't show
+    // the START button, so the deep link can't auto-send /start <code>. Sending
+    // this command by hand always works.
+    startCommand: `/start ${data}`,
   });
 }
 
