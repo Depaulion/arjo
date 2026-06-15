@@ -52,6 +52,7 @@ const PARTNERS: Partner[] = [
 const PILLS = [
   { label: "Secure", className: "bg-primary/15 text-primary" },
   { label: "Transparent", className: "bg-accent/15 text-accent" },
+  { label: "Private by design", className: "bg-emerald-500/15 text-emerald-400" },
   { label: "Community Driven", className: "bg-sky-500/15 text-sky-400" },
 ];
 

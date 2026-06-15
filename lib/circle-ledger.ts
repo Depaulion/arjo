@@ -211,6 +211,9 @@ export async function getCircleLedgerFromDb(
       total: num(c.total),
       count: num(c.count),
       lastAt: c.last_at,
+      // The RPC returns total=null only for members masked by the circle's
+      // "private amounts" mode (contributor rows otherwise always have total>0).
+      masked: c.total === null,
     }));
   }
 

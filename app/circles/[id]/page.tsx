@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Coins,
+  EyeOff,
   PiggyBank,
   Trophy,
   Users,
@@ -30,6 +31,7 @@ import { CircleInsights } from "@/components/circles/circle-insights";
 import { CircleTabs } from "@/components/circles/circle-tabs";
 import { ContributeButton } from "@/components/circles/contribute-button";
 import { AutoDebitToggle } from "@/components/circles/auto-debit-toggle";
+import { PrivacyToggle } from "@/components/circles/privacy-toggle";
 import { GovernancePanel } from "@/components/circles/governance-panel";
 import { PayoutButton } from "@/components/circles/payout-button";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +134,7 @@ export default async function CircleDashboardPage({
   let governance: GovernanceData | null = null;
   let isMember = false;
   let myAutoDebit = false;
+  let privateAmounts = false;
   if (isRealCircle) {
     try {
       const supabase = createClient();
@@ -142,10 +145,11 @@ export default async function CircleDashboardPage({
       if (user) {
         const { data: row } = await supabase
           .from("circles")
-          .select("created_by")
+          .select("created_by, private_amounts")
           .eq("id", params.id)
-          .single<{ created_by: string }>();
+          .single<{ created_by: string; private_amounts: boolean }>();
         isCreator = row?.created_by === user.id;
+        privateAmounts = row?.private_amounts ?? false;
 
         // The viewer's own membership drives the auto-debit opt-in control.
         const { data: myMember } = await supabase
@@ -247,6 +251,13 @@ export default async function CircleDashboardPage({
               currency={data.currency}
             />
           )}
+          {/* Creator controls who can see individual member amounts. */}
+          {isCreator && (
+            <PrivacyToggle
+              circleId={params.id}
+              initialPrivate={privateAmounts}
+            />
+          )}
         </div>
       )}
 
@@ -318,13 +329,21 @@ export default async function CircleDashboardPage({
             </p>
             {data.contributors.length > 0 ? (
               <div className="mt-3 flex -space-x-2">
-                {data.contributors.slice(0, 6).map((c) => (
+                {data.contributors.slice(0, 6).map((c, i) => (
                   <span
-                    key={c.address}
-                    title={c.address}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-primary/15 text-[10px] font-bold text-primary"
+                    key={c.masked ? `masked-${i}` : c.address}
+                    title={c.masked ? "Amount hidden (private circle)" : c.address}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-card text-[10px] font-bold ${
+                      c.masked
+                        ? "bg-accent/15 text-accent"
+                        : "bg-primary/15 text-primary"
+                    }`}
                   >
-                    {addressInitials(c.address)}
+                    {c.masked ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      addressInitials(c.address)
+                    )}
                   </span>
                 ))}
                 {data.contributors.length > 6 && (

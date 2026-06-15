@@ -11,6 +11,7 @@ import {
   Lock,
   PiggyBank,
   RefreshCw,
+  EyeOff,
   ShieldCheck,
   Sparkles,
   TrendingUp,
@@ -37,6 +38,7 @@ const TOC = [
   { id: "wallet", label: "Your wallet & test USDC" },
   { id: "yield", label: "Yield & APY" },
   { id: "safety", label: "Member safety & defaulters" },
+  { id: "privacy", label: "Privacy & governed visibility" },
   { id: "ramps", label: "Funding & cashing out" },
   { id: "security", label: "Security & custody" },
   { id: "pricing", label: "Pricing" },
@@ -398,6 +400,62 @@ export default function DocsPage() {
                 that backstops a missed round) and grace-period reminders before
                 a member is flagged — deepening protection without punishing an
                 honest late payment.
+              </p>
+            </Section>
+
+            <Section id="privacy" title="Privacy &amp; governed visibility">
+              <p className="flex items-start gap-2">
+                <EyeOff className="mt-1 h-5 w-5 shrink-0 text-accent" />
+                <span>
+                  A group pot needs a shared, auditable total — but who put in
+                  exactly how much is sensitive. Arjo&apos;s answer is{" "}
+                  <strong className="text-foreground">
+                    privacy with governed visibility
+                  </strong>
+                  : the pot total stays open to the whole circle, while each
+                  member&apos;s individual figures are shown only to people with
+                  a defined reason to see them.
+                </span>
+              </p>
+              <ul className="list-disc space-y-2 pl-5 marker:text-accent">
+                <li>
+                  <strong className="text-foreground">
+                    Pooled by design.
+                  </strong>{" "}
+                  Every circle&apos;s funds settle into one shared vault, so an
+                  on-chain observer sees flows in and out of the vault — not
+                  &ldquo;this person contributed X to that circle.&rdquo; Per-member
+                  attribution lives in the ledger, not in a public address.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Defined access.
+                  </strong>{" "}
+                  That ledger is protected by row-level security: you read your
+                  own activity, and the people authorised for a circle read
+                  theirs. No public exposure, no admin override key.
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Private amounts mode.
+                  </strong>{" "}
+                  A circle creator can switch on{" "}
+                  <em>private amounts</em>, which hides each member&apos;s
+                  individual contribution figures from other members — every
+                  member still sees their own, the creator (as the authorised
+                  party) sees all, and the shared pot total stays visible to
+                  everyone.
+                </li>
+              </ul>
+              <p className="rounded-2xl border border-accent/40 bg-accent/5 p-4 text-sm">
+                This is enforced today at the data layer Arjo controls. It is
+                deliberately aligned with{" "}
+                <strong className="text-foreground">Arc&apos;s privacy
+                roadmap</strong> — confidential transfers with governed
+                visibility for real financial workflows. As those on-chain
+                primitives ship, Arjo&apos;s model extends to settle the same
+                way it already presents: sensitive activity protected, authorised
+                parties retaining defined access.
               </p>
             </Section>
 

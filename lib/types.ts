@@ -361,6 +361,13 @@ export type Contributor = {
   count: number;
   /** ISO timestamp of their most recent contribution. */
   lastAt: string | null;
+  /**
+   * True when this contributor's figures are hidden from the viewer by the
+   * circle's "private amounts" mode (governed visibility — migration 0022).
+   * The member is still listed (participation isn't secret), but total/count
+   * are masked. Always false for the member themselves and the creator.
+   */
+  masked?: boolean;
 };
 
 /**
