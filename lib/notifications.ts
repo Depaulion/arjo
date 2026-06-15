@@ -26,6 +26,7 @@ const META: Record<
   auto_debit_upcoming: { title: "Auto-debit upcoming", icon: "sync", tone: "reminder" },
   auto_debit_paid: { title: "Contribution auto-paid", icon: "wallet", tone: "info" },
   auto_debit_failed: { title: "Auto-debit couldn't run", icon: "alert", tone: "alert" },
+  round_reminder: { title: "Contribution due soon", icon: "sync", tone: "reminder" },
 };
 
 /** Map a stored notification row to the bell's presentational shape. */

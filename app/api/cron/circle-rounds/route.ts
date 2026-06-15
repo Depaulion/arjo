@@ -5,6 +5,7 @@ import { isCircleConfigured } from "@/lib/circle";
 import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { getUsdcBalance } from "@/lib/arc-onchain";
+import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +61,8 @@ type UpcomingRow = {
   round_due_at: string | null;
 };
 
+type ChatIdRow = { user_id: string; chat_id: string | null };
+
 const num = (v: number | string | null | undefined): number => {
   const n = typeof v === "string" ? Number(v) : v ?? 0;
   return Number.isFinite(n as number) ? (n as number) : 0;
@@ -74,49 +77,108 @@ async function handle(request: Request) {
 
   const summary = {
     upcomingNotified: 0,
+    remindersNotified: 0,
     debited: 0,
     insufficient: 0,
     noWallet: 0,
     sendFailed: 0,
     skipped: 0,
+    telegramSent: 0,
     onChain: false as boolean,
   };
 
-  // --- Pass 1: upcoming heads-up ---------------------------------------------
-  const { data: upcoming, error: upErr } = await supabase.rpc(
-    "upcoming_auto_debits",
-    { p_secret: secret }
-  );
-  if (!upErr && Array.isArray(upcoming)) {
-    for (const u of upcoming as UpcomingRow[]) {
-      const amt = round2(num(u.amount));
-      const cur = u.currency ?? "USDC";
-      const due = u.round_due_at
-        ? new Date(u.round_due_at).toLocaleDateString()
-        : "soon";
-      const msg = `Your ${amt} ${cur} contribution to "${u.circle_name}" will be auto-debited around ${due} (round ${u.round_number}). Keep enough USDC in your wallet.`;
-      const { error } = await supabase.rpc("notify_from_cron", {
+  // Pull the three notification sources up front so we can resolve every
+  // member's Telegram chat in a single round-trip before processing.
+  const [upRes, remRes, dueRes] = await Promise.all([
+    supabase.rpc("upcoming_auto_debits", { p_secret: secret }),
+    supabase.rpc("due_round_reminders", { p_secret: secret }),
+    supabase.rpc("due_auto_debits", { p_secret: secret }),
+  ]);
+
+  const upcoming = (
+    !upRes.error && Array.isArray(upRes.data) ? upRes.data : []
+  ) as UpcomingRow[];
+  const reminders = (
+    !remRes.error && Array.isArray(remRes.data) ? remRes.data : []
+  ) as UpcomingRow[];
+  if (dueRes.error) {
+    return NextResponse.json(
+      { error: dueRes.error.message, summary },
+      { status: 500 }
+    );
+  }
+  const due = (Array.isArray(dueRes.data) ? dueRes.data : []) as DueRow[];
+
+  // Map user_id → linked Telegram chat for everyone involved this run.
+  const chatById = new Map<string, string>();
+  if (isTelegramConfigured()) {
+    const ids = Array.from(
+      new Set([
+        ...upcoming.map((u) => u.user_id),
+        ...reminders.map((r) => r.user_id),
+        ...due.map((d) => d.user_id),
+      ])
+    );
+    if (ids.length > 0) {
+      const { data: chats } = await supabase.rpc("telegram_chat_ids", {
         p_secret: secret,
-        p_user_id: u.user_id,
-        p_circle_id: u.circle_id,
-        p_type: "auto_debit_upcoming",
-        p_message: msg,
+        p_user_ids: ids,
       });
-      if (!error) summary.upcomingNotified += 1;
+      for (const c of (chats ?? []) as ChatIdRow[]) {
+        if (c.chat_id) chatById.set(c.user_id, c.chat_id);
+      }
+    }
+  }
+
+  // Create an in-app notification and mirror it to Telegram when the member is
+  // linked. Returns the RPC error (if any) so callers can count successes.
+  const notify = async (
+    userId: string,
+    circleId: string,
+    type: string,
+    message: string
+  ) => {
+    const { error } = await supabase.rpc("notify_from_cron", {
+      p_secret: secret,
+      p_user_id: userId,
+      p_circle_id: circleId,
+      p_type: type,
+      p_message: message,
+    });
+    const chat = chatById.get(userId);
+    if (chat && (await sendTelegramMessage(chat, message))) {
+      summary.telegramSent += 1;
+    }
+    return error;
+  };
+
+  // --- Pass 1: upcoming auto-debit heads-up ----------------------------------
+  for (const u of upcoming) {
+    const amt = round2(num(u.amount));
+    const cur = u.currency ?? "USDC";
+    const dueLabel = u.round_due_at
+      ? new Date(u.round_due_at).toLocaleDateString()
+      : "soon";
+    const msg = `Your ${amt} ${cur} contribution to "${u.circle_name}" will be auto-debited around ${dueLabel} (round ${u.round_number}). Keep enough USDC in your wallet.`;
+    if (!(await notify(u.user_id, u.circle_id, "auto_debit_upcoming", msg))) {
+      summary.upcomingNotified += 1;
+    }
+  }
+
+  // --- Pass 1b: round-due reminders (members NOT on auto-debit) --------------
+  for (const r of reminders) {
+    const amt = round2(num(r.amount));
+    const cur = r.currency ?? "USDC";
+    const dueLabel = r.round_due_at
+      ? new Date(r.round_due_at).toLocaleDateString()
+      : "soon";
+    const msg = `Reminder: your ${amt} ${cur} contribution to "${r.circle_name}" (round ${r.round_number}) is due ${dueLabel}. Open Arjo to contribute and keep your circle on track.`;
+    if (!(await notify(r.user_id, r.circle_id, "round_reminder", msg))) {
+      summary.remindersNotified += 1;
     }
   }
 
   // --- Pass 2: due debits -----------------------------------------------------
-  const { data: due, error: dueErr } = await supabase.rpc("due_auto_debits", {
-    p_secret: secret,
-  });
-  if (dueErr) {
-    return NextResponse.json(
-      { error: dueErr.message, summary },
-      { status: 500 }
-    );
-  }
-
   // Resolve the pot = the shared platform vault. Funds are pulled INTO it.
   let potAddress: string | null = null;
   const configured = isCircleConfigured();
@@ -134,14 +196,8 @@ async function handle(request: Request) {
     const currency = d.currency ?? "USDC";
     const round = d.round_number;
 
-    const notify = (type: string, message: string) =>
-      supabase.rpc("notify_from_cron", {
-        p_secret: secret,
-        p_user_id: d.user_id,
-        p_circle_id: d.circle_id,
-        p_type: type,
-        p_message: message,
-      });
+    const notifyDue = (type: string, message: string) =>
+      notify(d.user_id, d.circle_id, type, message);
 
     const record = (status: string, txHash: string | null) =>
       supabase.rpc("record_auto_debit", {
@@ -168,7 +224,7 @@ async function handle(request: Request) {
     if (!summary.onChain || !d.wallet_id || !d.wallet_address) {
       if (!d.wallet_address || !d.wallet_id) {
         // Member opted in but never linked a wallet — can't pull. Notify, skip.
-        await notify(
+        await notifyDue(
           "auto_debit_failed",
           `Auto-debit for "${d.circle_name}" couldn't run — link an Arc wallet to enable automatic contributions.`
         );
@@ -176,7 +232,7 @@ async function handle(request: Request) {
         continue;
       }
       await record("pending", null);
-      await notify(
+      await notifyDue(
         "auto_debit_paid",
         `Recorded your ${amount} ${currency} contribution to "${d.circle_name}" (round ${round}). It will settle on-chain once payments are live.`
       );
@@ -195,7 +251,7 @@ async function handle(request: Request) {
     }
 
     if (round2(balance) < amount) {
-      await notify(
+      await notifyDue(
         "auto_debit_failed",
         `Auto-debit for "${d.circle_name}" couldn't run — your wallet holds ${round2(balance)} ${currency}, below the ${amount} ${currency} due for round ${round}. Top up to stay in good standing.`
       );
@@ -215,14 +271,14 @@ async function handle(request: Request) {
         refId: `autodebit:${d.circle_id}`,
       });
       await record("pending", res.txHash);
-      await notify(
+      await notifyDue(
         "auto_debit_paid",
         `We auto-debited ${amount} ${currency} from your wallet for "${d.circle_name}" (round ${round}).`
       );
       summary.debited += 1;
     } catch {
       // Send rejected — leave the round unpaid so it retries next run.
-      await notify(
+      await notifyDue(
         "auto_debit_failed",
         `Auto-debit for "${d.circle_name}" couldn't be sent on-chain. We'll retry on the next run.`
       );

@@ -46,6 +46,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ProfileForm } from "@/components/auth/profile-form";
+import { ConnectTelegram } from "@/components/dashboard/settings/connect-telegram";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
 import { ClaimButton } from "@/components/wallet/claim-button";
@@ -134,6 +135,7 @@ export default async function AccountPage() {
     reinstatement_circles_completed: 0,
     ai_risk_score: "low",
     reputation_history: [],
+    telegram_chat_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -872,6 +874,23 @@ export default async function AccountPage() {
             </CardHeader>
             <CardContent>
               <ProfileForm profile={safeProfile} />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Notifications */}
+        <section className="scroll-mt-24">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Notifications</CardTitle>
+              <CardDescription>
+                Get circle reminders and payout alerts where you already are.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConnectTelegram
+                initialLinked={Boolean(safeProfile.telegram_chat_id)}
+              />
             </CardContent>
           </Card>
         </section>

@@ -32,6 +32,8 @@ export type Profile = {
   reinstatement_circles_completed: number;
   ai_risk_score: RiskTier;
   reputation_history: ReputationEvent[];
+  /** Linked Telegram chat the bot DMs notifications to (migration 0023). */
+  telegram_chat_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -62,7 +64,9 @@ export type NotificationType =
   // Circle auto-debit lifecycle (migration 0021).
   | "auto_debit_upcoming"
   | "auto_debit_paid"
-  | "auto_debit_failed";
+  | "auto_debit_failed"
+  // Round-due reminder for members not on auto-debit (migration 0023).
+  | "round_reminder";
 
 /** A row from public.notifications. */
 export type Notification = {
