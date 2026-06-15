@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Plus,
+  Settings,
   ShieldCheck,
   Vault,
   Wallet,
@@ -189,6 +190,14 @@ export function DashboardNav({
               <Plus className="h-4 w-4 text-primary" />
               New circle
             </Link>
+            <a
+              href="#settings"
+              onClick={() => setOpen(false)}
+              className={itemClass}
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </a>
             <Link
               href="/docs"
               onClick={() => setOpen(false)}
