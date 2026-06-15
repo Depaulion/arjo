@@ -20,14 +20,19 @@ export function telegramBotUsername(): string | null {
   return process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? null;
 }
 
+/** A row of inline link buttons (each opens a URL). */
+export type TelegramButton = { text: string; url: string };
+
 /**
- * Send a plain-text message to a chat. Returns true on success, false on any
- * failure (network, bad token, user blocked the bot, …) — callers treat a false
- * as "Telegram not delivered" and carry on; they never throw on it.
+ * Send a message to a chat, optionally with rows of inline URL buttons (used by
+ * the bot to deep-link into the app for money actions). Returns true on success,
+ * false on any failure (network, bad token, user blocked the bot, …) — callers
+ * treat a false as "Telegram not delivered" and carry on; they never throw.
  */
 export async function sendTelegramMessage(
   chatId: string,
-  text: string
+  text: string,
+  buttons?: TelegramButton[][]
 ): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token || !chatId) return false;
@@ -39,8 +44,12 @@ export async function sendTelegramMessage(
       body: JSON.stringify({
         chat_id: chatId,
         text,
-        // Disable link previews so contribution reminders stay compact.
+        // Plain text (no parse_mode): circle names are user-supplied, so HTML/
+        // Markdown parsing could fail on a stray & or <. Keep it literal.
         disable_web_page_preview: true,
+        ...(buttons && buttons.length > 0
+          ? { reply_markup: { inline_keyboard: buttons } }
+          : {}),
       }),
     });
     return res.ok;
