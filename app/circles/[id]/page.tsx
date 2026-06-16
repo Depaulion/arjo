@@ -32,6 +32,8 @@ import { CircleTabs } from "@/components/circles/circle-tabs";
 import { ContributeButton } from "@/components/circles/contribute-button";
 import { AutoDebitToggle } from "@/components/circles/auto-debit-toggle";
 import { PrivacyToggle } from "@/components/circles/privacy-toggle";
+import { InvitePanel } from "@/components/circles/invite-panel";
+import { InviteLanding } from "@/components/circles/invite-landing";
 import { GovernancePanel } from "@/components/circles/governance-panel";
 import { PayoutButton } from "@/components/circles/payout-button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,13 @@ function addressInitials(address: string) {
 function demoAddress(): string | null {
   const candidate = process.env.ARC_DEMO_ADDRESS;
   return candidate && isEvmAddress(candidate) ? candidate.toLowerCase() : null;
+}
+
+function siteBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://arc-ajo.vercel.app"
+  );
 }
 
 /**
@@ -114,11 +123,14 @@ async function resolveCircle(id: string): Promise<CircleLedgerInput> {
 
 export default async function CircleDashboardPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { invite?: string };
 }) {
   const input = await resolveCircle(params.id);
   const isRealCircle = !isEvmAddress(params.id);
+  const inviteCode = searchParams?.invite ?? null;
 
   // Real circles read pot/contributors/activity from the ledger (per-circle
   // attribution in the shared vault); raw-address views still scan on-chain.
@@ -135,6 +147,7 @@ export default async function CircleDashboardPage({
   let isMember = false;
   let myAutoDebit = false;
   let privateAmounts = false;
+  let inviteLink: string | null = null;
   if (isRealCircle) {
     try {
       const supabase = createClient();
@@ -145,11 +158,18 @@ export default async function CircleDashboardPage({
       if (user) {
         const { data: row } = await supabase
           .from("circles")
-          .select("created_by, private_amounts")
+          .select("created_by, private_amounts, invite_code")
           .eq("id", params.id)
-          .single<{ created_by: string; private_amounts: boolean }>();
+          .maybeSingle<{
+            created_by: string;
+            private_amounts: boolean;
+            invite_code: string | null;
+          }>();
         isCreator = row?.created_by === user.id;
         privateAmounts = row?.private_amounts ?? false;
+        if (isCreator && row?.invite_code) {
+          inviteLink = `${siteBaseUrl()}/circles/${params.id}?invite=${row.invite_code}`;
+        }
 
         // The viewer's own membership drives the auto-debit opt-in control.
         const { data: myMember } = await supabase
@@ -164,6 +184,49 @@ export default async function CircleDashboardPage({
       governance = await getGovernanceData(supabase, params.id, userId);
     } catch {
       // Supabase unavailable — treat as non-creator (hide payout control).
+    }
+  }
+
+  // Invitee landing: a signed-in non-member who opened a private circle's invite
+  // link. The dashboard RPCs return nothing for them (they can't view the
+  // circle yet), so resolve the join terms by code and show a focused join card.
+  if (
+    isRealCircle &&
+    inviteCode &&
+    userId &&
+    !isCreator &&
+    !governance?.isMember
+  ) {
+    try {
+      const supabase = createClient();
+      const { data: inv } = await supabase.rpc("circle_by_invite", {
+        p_code: inviteCode,
+      });
+      const r = Array.isArray(inv)
+        ? (inv[0] as Record<string, unknown> | undefined)
+        : null;
+      if (r && r.id === params.id) {
+        const invFreq = r.frequency as string | null;
+        const invFreqLabel = invFreq
+          ? CIRCLE_FREQUENCIES.find((f) => f.value === invFreq)?.label ?? invFreq
+          : null;
+        return (
+          <InviteLanding
+            circleId={params.id}
+            inviteCode={inviteCode}
+            name={(r.name as string) ?? "Savings circle"}
+            description={(r.description as string | null) ?? null}
+            currency={(r.currency as string) ?? "USDC"}
+            contributionAmount={Number(r.contribution_amount ?? 0)}
+            frequencyLabel={invFreqLabel}
+            memberCount={Number(r.member_count ?? 0)}
+            requiredBond={Number(r.required_bond ?? 0)}
+            isPublic={Boolean(r.is_public)}
+          />
+        );
+      }
+    } catch {
+      // Bad/expired code — fall through to the normal (likely empty) view.
     }
   }
 
@@ -257,6 +320,10 @@ export default async function CircleDashboardPage({
               circleId={params.id}
               initialPrivate={privateAmounts}
             />
+          )}
+          {/* Creator can invite people — the only way into a private circle. */}
+          {isCreator && (
+            <InvitePanel circleId={params.id} initialLink={inviteLink} />
           )}
         </div>
       )}

@@ -45,7 +45,7 @@ type ProfileSignals = {
  * with the bond marked "held".
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   const supabase = createClient();
@@ -56,14 +56,45 @@ export async function POST(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  // An invite code (for a private circle) may come in the body.
+  let inviteCode: string | null = null;
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body.inviteCode === "string") inviteCode = body.inviteCode;
+  } catch {
+    /* no body — public-circle join */
+  }
+
   // Load the circle (RLS: readable when public or already a member).
-  const { data: circle } = await supabase
-    .from("circles")
-    .select(
-      "id, currency, status, is_public, member_count, contribution_amount, required_bond"
-    )
-    .eq("id", params.id)
-    .single<CircleRow>();
+  let circle = (
+    await supabase
+      .from("circles")
+      .select(
+        "id, currency, status, is_public, member_count, contribution_amount, required_bond"
+      )
+      .eq("id", params.id)
+      .maybeSingle<CircleRow>()
+  ).data;
+
+  // Private circle the invitee can't read via RLS: resolve it by invite code.
+  // The code must match this exact circle, so it can't be used to join another.
+  if (!circle && inviteCode) {
+    const { data: inv } = await supabase.rpc("circle_by_invite", {
+      p_code: inviteCode,
+    });
+    const row = Array.isArray(inv) ? (inv[0] as Record<string, unknown>) : null;
+    if (row && row.id === params.id) {
+      circle = {
+        id: row.id as string,
+        currency: row.currency as string,
+        status: row.status as string,
+        is_public: row.is_public as boolean,
+        member_count: row.member_count as number,
+        contribution_amount: row.contribution_amount as number,
+        required_bond: row.required_bond as number,
+      };
+    }
+  }
 
   if (!circle) {
     return NextResponse.json({ error: "Circle not found." }, { status: 404 });

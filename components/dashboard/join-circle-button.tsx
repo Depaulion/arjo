@@ -9,11 +9,14 @@ import { Button } from "@/components/ui/button";
 export function JoinCircleButton({
   circleId,
   joined,
+  inviteCode,
 }: {
   circleId: string;
   /** Present for API parity with callers; the join route derives the user. */
   userId?: string;
   joined: boolean;
+  /** Invite token for joining a private circle the user can't otherwise see. */
+  inviteCode?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -28,6 +31,8 @@ export function JoinCircleButton({
     try {
       const res = await fetch(`/api/circles/${circleId}/join`, {
         method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(inviteCode ? { inviteCode } : {}),
       });
       const json = (await res.json()) as {
         error?: string;
