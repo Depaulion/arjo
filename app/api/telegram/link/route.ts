@@ -51,6 +51,26 @@ export async function POST() {
   });
 }
 
+/** Linked-status poll: lets the Connect UI flip to "Connected" automatically
+ *  once the user sends /start to the bot, without a manual refresh. */
+export async function GET() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("telegram_chat_id")
+    .eq("id", user.id)
+    .maybeSingle<{ telegram_chat_id: string | null }>();
+
+  return NextResponse.json({ linked: Boolean(data?.telegram_chat_id) });
+}
+
 export async function DELETE() {
   const supabase = createClient();
   const {
