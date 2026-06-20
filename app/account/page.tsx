@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/card";
 import { ProfileForm } from "@/components/auth/profile-form";
 import { ConnectTelegram } from "@/components/dashboard/settings/connect-telegram";
+import { AskArjo } from "@/components/dashboard/ask-arjo";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
 import { ClaimButton } from "@/components/wallet/claim-button";
@@ -897,6 +898,7 @@ export default async function AccountPage() {
         </>
         }
       />
+      <AskArjo />
     </div>
   );
 }
