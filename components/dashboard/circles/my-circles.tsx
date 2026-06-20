@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { Compass, Plus, Users } from "lucide-react";
 
 import type { HealthCircle } from "@/components/dashboard/circle-health";
 import { CircleCard } from "@/components/dashboard/circles/circle-card";
@@ -46,9 +46,31 @@ export function MyCircles({ circles }: { circles: HealthCircle[] }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border/70 bg-card p-6 text-center text-sm text-muted-foreground">
-          You haven&apos;t joined any circles yet. Discover public circles below
-          or start your own.
+        <div className="rounded-2xl border border-dashed border-border/70 bg-card p-8 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+            <Users className="h-6 w-6" />
+          </span>
+          <p className="mt-3 text-base font-semibold">No circles yet</p>
+          <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+            A savings circle is a group that pools funds and takes turns getting
+            paid. Start your own or join an open one below.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/circles/new"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              Create a circle
+            </Link>
+            <a
+              href="#community"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Compass className="h-4 w-4" />
+              Browse community
+            </a>
+          </div>
         </div>
       )}
     </div>
