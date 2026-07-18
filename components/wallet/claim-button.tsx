@@ -31,12 +31,12 @@ export function ClaimButton({
 
   const empty = balance === null || balance <= 0;
 
-  function claim() {
-    navigator.clipboard?.writeText(address).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 6000);
-    window.open(ARC_TESTNET.faucetUrl, "_blank", "noopener,noreferrer");
-  }
+  function handleClaim() {
+  claim();
+  setTimeout(() => {
+    startRefresh(() => router.refresh());
+  }, 15000);
+}
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/10 to-accent/10 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -82,7 +82,7 @@ export function ClaimButton({
           )}
           Refresh
         </Button>
-        <Button size="sm" onClick={claim}>
+        <Button size="sm" onClick={handleClaim}>
           <Droplet className="h-4 w-4" />
           Claim test {currency}
           <ExternalLink className="h-3.5 w-3.5" />
