@@ -19,8 +19,8 @@ const FIAT_CODES: FiatCurrency[] = ["USD", "NGN", "GHS", "KES"];
  * mobile-money account. On Arc Testnet there is no live fiat rail, and moving
  * real money is never auto-executed here — so this records a PENDING settlement
  * request (reusing the ledger 'withdraw' kind, since it withdraws value) that a
- * payout provider would fulfil. No USDC is moved on-chain and no funds are sent;
- * the on-chain balance check only confirms the user could cover the request.
+ * payout provider would fulfil. No USDC is moved onchain and no funds are sent;
+ * the onchain balance check only confirms the user could cover the request.
  */
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Confirm they could cover it — the on-chain balance stays authoritative. We
+  // Confirm they could cover it — the onchain balance stays authoritative. We
   // deliberately do NOT send the USDC; a settlement provider takes custody when
   // fulfilling the request, which is out of scope for the testnet build.
   let balance: number;

@@ -7,13 +7,13 @@ export const runtime = "nodejs";
 /**
  * Cancel a pending off-ramp request before a provider settles it.
  *
- * An off-ramp records a pending `withdraw` row with NO on-chain footprint
+ * An off-ramp records a pending `withdraw` row with NO onchain footprint
  * (no circle_tx_id, no tx_hash) — the reconciler never touches those, so they
  * sit pending until cancelled. We mark the row `failed` (the terminal
  * non-success state; there is no `cancelled` status without a migration) and
  * note the reason, which renders inline in the activity feed.
  *
- * The guard only matches rows with no on-chain action, so this can never cancel
+ * The guard only matches rows with no onchain action, so this can never cancel
  * an in-flight transfer. RLS already scopes ledger_entries to the caller; the
  * explicit user_id filter is defence in depth.
  */

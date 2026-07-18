@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 /**
  * Send the next rotating payout from the pot to the next member in line. Only
  * rendered for the circle creator (the pot owner). Posts to the payout API,
- * which records a `payout` ledger entry and moves USDC on-chain from the
+ * which records a `payout` ledger entry and moves USDC onchain from the
  * creator's wallet to the recipient when Circle wallets are configured.
  */
 export function PayoutButton({
@@ -48,7 +48,7 @@ export function PayoutButton({
       setNotice(json.message ?? "All members have been paid.");
     } else if (json.pending) {
       setNotice(
-        `Payout of ${json.amount} ${currency} recorded — the on-chain transfer is pending. Fund the pot wallet to settle it.`
+        `Payout of ${json.amount} ${currency} recorded — the onchain transfer is pending. Fund the pot wallet to settle it.`
       );
     } else {
       const short = json.recipient?.address

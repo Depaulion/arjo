@@ -220,7 +220,7 @@ async function handle(request: Request) {
 
     // Simulated mode (no Circle config / no vault / member has no wallet id):
     // record a pending contribution so the round is marked paid — mirrors the
-    // user-initiated contribute route's behaviour when on-chain is unavailable.
+    // user-initiated contribute route's behaviour when onchain is unavailable.
     if (!summary.onChain || !d.wallet_id || !d.wallet_address) {
       if (!d.wallet_address || !d.wallet_id) {
         // Member opted in but never linked a wallet — can't pull. Notify, skip.
@@ -234,13 +234,13 @@ async function handle(request: Request) {
       await record("pending", null);
       await notifyDue(
         "auto_debit_paid",
-        `Recorded your ${amount} ${currency} contribution to "${d.circle_name}" (round ${round}). It will settle on-chain once payments are live.`
+        `Recorded your ${amount} ${currency} contribution to "${d.circle_name}" (round ${round}). It will settle onchain once payments are live.`
       );
       summary.debited += 1;
       continue;
     }
 
-    // On-chain: verify the member holds enough before attempting the pull.
+    // onchain: verify the member holds enough before attempting the pull.
     let balance: number;
     try {
       balance = await getUsdcBalance(d.wallet_address);
@@ -280,7 +280,7 @@ async function handle(request: Request) {
       // Send rejected — leave the round unpaid so it retries next run.
       await notifyDue(
         "auto_debit_failed",
-        `Auto-debit for "${d.circle_name}" couldn't be sent on-chain. We'll retry on the next run.`
+        `Auto-debit for "${d.circle_name}" couldn't be sent onchain. We'll retry on the next run.`
       );
       summary.sendFailed += 1;
     }

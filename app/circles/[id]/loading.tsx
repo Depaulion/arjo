@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Circle dashboard loading skeleton — rendered while the circle page resolves
- * its ledger pot, contributors, governance and on-chain data. Mirrors the
+ * its ledger pot, contributors, governance and onchain data. Mirrors the
  * page's header, round banner, stat-card grid and activity list.
  */
 export default function CircleLoading() {

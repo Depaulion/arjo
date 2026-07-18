@@ -10,7 +10,7 @@
 // contract is actually deployed at the Teller address — then prints a PASS/TODO
 // checklist for going live. Run this FIRST and after each step to see progress.
 //
-// The "approve" mode submits ONE on-chain transaction from the platform vault
+// The "approve" mode submits ONE onchain transaction from the platform vault
 // wallet: ERC-20 approve(teller, amount) on the USDC token, so the Teller can
 // pull USDC when minting USYC. It does NOT move or mint anything by itself. It
 // is gated behind the explicit `approve` argument AND a typed confirmation
@@ -135,7 +135,7 @@ async function check() {
     isContract(TELLER).catch(() => null),
   ]);
 
-  console.log("Vault on-chain state:");
+  console.log("Vault onchain state:");
   console.log("  address          :", VAULT_ADDRESS);
   console.log("  USDC balance     :", vaultUsdc === null ? "read failed" : vaultUsdc.toFixed(6));
   console.log("  USYC balance     :", vaultUsyc === null ? "read failed" : vaultUsyc.toFixed(6));
@@ -171,7 +171,7 @@ async function check() {
 async function approve() {
   if (process.env.CONFIRM !== "yes") {
     console.log(
-      "This submits an on-chain ERC-20 approve() from the vault wallet.\n" +
+      "This submits an onchain ERC-20 approve() from the vault wallet.\n" +
         "It grants the Teller permission to pull the vault's USDC (no funds move,\n" +
         "nothing is minted). Re-run with CONFIRM=yes to proceed:\n\n" +
         "  CONFIRM=yes node scripts/usyc-golive.cjs approve [amountUSDC]\n\n" +

@@ -1,12 +1,12 @@
 # Arjo — Feature Inventory
 
 Arjo is a stablecoin group-savings (Ajo / ROSCA) super-app built on **Arc
-(Circle) Testnet** with real on-chain USDC. This document is a complete
+(Circle) Testnet** with real onchain USDC. This document is a complete
 inventory of what the app does, grouped by domain, with the source locations for
 each capability so it stays verifiable.
 
 > **Reality note:** the savings / circle / bond / yield core moves **real
-> on-chain Arc Testnet USDC**. The fiat on/off-ramp is testnet-indicative (USDC
+> onchain Arc Testnet USDC**. The fiat on/off-ramp is testnet-indicative (USDC
 > is funded from Circle's faucet; the off-ramp records a settlement request a
 > provider would fulfil), and the AI features compute deterministic numbers with
 > an *optional* Claude narrative layer on top. USYC yield is real but
@@ -27,8 +27,8 @@ each capability so it stays verifiable.
 - Auto-provisioned Circle developer-controlled wallet per user on registration (`lib/circle.ts`, `app/api/wallet`, `components/wallet/wallet-provisioner.tsx`, migration `0003`).
 - Wallet panel — address, balance, explorer link, setup banner / claim flow (`components/wallet/*`).
 - Platform vault — single SCA wallet holding all pooled funds (`lib/vault.ts`).
-- On-chain USDC transfers with idempotency keys + ref IDs (`lib/circle-transfer.ts`).
-- Read-only on-chain reads — balances, USDC transfer history, generic ERC-20 `balanceOf` (`lib/arc-onchain.ts`).
+- onchain USDC transfers with idempotency keys + ref IDs (`lib/circle-transfer.ts`).
+- Read-only onchain reads — balances, USDC transfer history, generic ERC-20 `balanceOf` (`lib/arc-onchain.ts`).
 - Wallet withdrawal to an external address (`app/api/wallet/withdraw`, `app/account/withdraw`, `components/dashboard/withdraw/withdraw-flow.tsx`).
 
 ## 3. Personal savings (SafeLock vaults)
@@ -38,7 +38,7 @@ Three plan types (`lib/savings-actions.ts`, `components/dashboard/savings-plans.
 - **Auto-save** — recurring scheduled contributions (`app/api/savings/[id]/run`).
 
 Plus:
-- Lock / contribute / withdraw flows, ledger-first with on-chain settlement (`app/api/savings/lock`, `app/api/savings/[id]/withdraw`).
+- Lock / contribute / withdraw flows, ledger-first with onchain settlement (`app/api/savings/lock`, `app/api/savings/[id]/withdraw`).
 - Quick-save widget (`components/dashboard/save/quick-save.tsx`).
 - Savings charts & projections (`components/dashboard/savings-charts.tsx`).
 
@@ -60,7 +60,7 @@ Plus:
 - Create circle — contribution, frequency, member count, currency, optional bond, public/private (`app/circles/new`, `components/circles/create-circle-form.tsx`, migration `0002`).
 - Discover & join public circles (`components/dashboard/community-savings.tsx`, `components/dashboard/join-circle-button.tsx`, `app/api/circles/[id]/join`, migration `0004`).
 - Contribute each round (`components/circles/contribute-button.tsx`, `app/api/circles/[id]/contribute`).
-- Rotation payouts — sequenced payout order, on-chain payout to the next member (`components/circles/payout-button.tsx`, `app/api/circles/[id]/payout`, migration `0006`).
+- Rotation payouts — sequenced payout order, onchain payout to the next member (`components/circles/payout-button.tsx`, `app/api/circles/[id]/payout`, migration `0006`).
 - Circle dashboard — health, members, payout order, insights, tabs (`app/circles/[id]`, `components/circles/*`).
 - Member exit / removal settlement — refund flow (`app/api/circles/[id]/settle-exit`, migration `0009`).
 
@@ -105,7 +105,7 @@ Plus:
 
 ## 16. Ledger & reconciliation (the money backbone)
 - Unified ledger — every money action recorded with kind / status / amount / tx refs (`lib/ledger.ts`, migration `0005`). Kinds: `contribution`, `lock`, `withdraw`, `autosave`, `payout`, `penalty`, `bonus`, `bond`, `bond_refund`, `bond_slash`, `bond_yield`.
-- Ledger-first pattern — record pending → on-chain → settle confirmed / failed.
+- Ledger-first pattern — record pending → onchain → settle confirmed / failed.
 - Reconciler — polls the Circle transaction state machine and promotes pending → confirmed / failed (`lib/reconcile.ts`, `app/api/ledger/reconcile`). *Currently user-session-scoped; a platform-wide background job is a planned hardening step.*
 - Activity feed — human-readable ledger with status + explorer links (`components/dashboard/activity-feed.tsx`).
 
@@ -147,5 +147,5 @@ Plus:
 ## Tech stack
 - **Frontend:** Next.js 14 App Router, TypeScript, React 18, Tailwind, shadcn-style primitives (dark theme; pink primary, purple accent, emerald for yield).
 - **Backend:** Next.js route handlers (Node runtime), Supabase (`@supabase/ssr`) with Row-Level Security.
-- **On-chain:** Circle developer-controlled wallets on Arc Testnet; real USDC; USYC (Circle's tokenised Treasury fund) for yield.
+- **onchain:** Circle developer-controlled wallets on Arc Testnet; real USDC; USYC (Circle's tokenised Treasury fund) for yield.
 - **Deploy:** push to `main` → Vercel auto-deploy.

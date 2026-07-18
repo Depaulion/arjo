@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
  * Prominent top-of-dashboard notice shown when a signed-in user doesn't yet
  * have an Arc wallet — i.e. automatic provisioning (OAuth callback + server
  * fallback) didn't complete. Lets them retry on demand so they're never stuck
- * without the wallet needed to claim test USDC and interact on-chain.
+ * without the wallet needed to claim test USDC and interact onchain.
  */
 export function WalletSetupBanner({
   configured = true,
@@ -69,12 +69,12 @@ export function WalletSetupBanner({
             ) : configured ? (
               <>
                 Your personal wallet is being created — it powers claiming test
-                USDC and every on-chain action. Tap retry if it doesn&apos;t
+                USDC and every onchain action. Tap retry if it doesn&apos;t
                 appear.
               </>
             ) : (
               <>
-                On-chain wallets aren&apos;t enabled on this deployment yet.
+                onchain wallets aren&apos;t enabled on this deployment yet.
                 Add Circle credentials to provision wallets automatically.
               </>
             )}

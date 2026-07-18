@@ -145,7 +145,7 @@ export default async function AccountPage() {
   // Arc wallet — even if the OAuth-callback attempt failed (Circle slow/down at
   // sign-in). Idempotent: returns the existing wallet if one already exists, so
   // this is a no-op on every load after the first. The wallet is what powers
-  // claiming test USDC from the Circle faucet and all on-chain interactions.
+  // claiming test USDC from the Circle faucet and all onchain interactions.
   if (!safeProfile.arc_wallet_address && isCircleConfigured()) {
     try {
       const wallet = await provisionWalletForUser(supabase, user.id);
@@ -281,7 +281,7 @@ export default async function AccountPage() {
     (c) => ({ ...c, creatorName: null })
   );
 
-  // Single on-chain scan powers the overview, coach and analytics.
+  // Single onchain scan powers the overview, coach and analytics.
   const snapshot = await getDashboardSnapshot({
     walletAddress: safeProfile.arc_wallet_address,
     activeCircles: myCircles.length,
@@ -403,7 +403,7 @@ export default async function AccountPage() {
     notifications.push({
       id: "wallet-setup",
       title: "Finish setting up your wallet",
-      body: "Your Arc Testnet wallet is being provisioned so you can save on-chain.",
+      body: "Your Arc Testnet wallet is being provisioned so you can save onchain.",
       icon: "wallet",
       tone: "reminder",
       href: "#overview",
@@ -805,7 +805,7 @@ export default async function AccountPage() {
         }
         activity={
         <>
-        {/* On-chain activity feed */}
+        {/* onchain activity feed */}
         <section id="activity" className="scroll-mt-24">
           <Card>
             <CardHeader>

@@ -14,7 +14,7 @@ export type GovMember = {
   payout_position: number | null;
   payout_address: string | null;
   reputation: number;
-  /** Awaiting on-chain refund settlement after an approved exit/removal. */
+  /** Awaiting onchain refund settlement after an approved exit/removal. */
   pending_exit: boolean;
   /** Bond + defaulter standing (migrations 0013/0015), for creator resolution. */
   bond_amount: number;

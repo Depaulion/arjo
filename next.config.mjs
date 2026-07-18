@@ -15,7 +15,7 @@ function checkEnv() {
       vars: ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"],
     },
     {
-      label: "On-chain wallets (Circle) — needed to provision wallets & transfer",
+      label: "onchain wallets (Circle) — needed to provision wallets & transfer",
       required: false,
       vars: ["CIRCLE_API_KEY", "CIRCLE_ENTITY_SECRET", "CIRCLE_WALLET_SET_ID"],
     },

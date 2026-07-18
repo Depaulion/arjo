@@ -1,4 +1,4 @@
-// Standalone on-chain verification: connect to Circle, list wallets in the
+// Standalone onchain verification: connect to Circle, list wallets in the
 // configured wallet set, and read each wallet's native USDC balance from the
 // Arc RPC. Read-only — moves no funds. Run: node scripts/verify-circle.cjs
 const fs = require("fs");

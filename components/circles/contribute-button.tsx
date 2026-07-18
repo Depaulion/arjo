@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Contribute USDC to a circle's pot. Posts to the contribute API, which records
- * a ledger entry and (when Circle wallets are configured) moves USDC on-chain
+ * a ledger entry and (when Circle wallets are configured) moves USDC onchain
  * from the member's wallet to the pot.
  */
 export function ContributeButton({
@@ -52,7 +52,7 @@ export function ContributeButton({
     }
     setNotice(
       json.pending
-        ? `Recorded ${value} ${currency}. On-chain transfer is pending — fund your Arc wallet to settle it.`
+        ? `Recorded ${value} ${currency}. onchain transfer is pending — fund your Arc wallet to settle it.`
         : `Contributed ${value} ${currency} to the pot.`
     );
     setOpen(false);

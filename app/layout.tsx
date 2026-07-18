@@ -17,7 +17,7 @@ const themeScript = `(function(){try{var t=localStorage.getItem('arjo-theme');if
 export const metadata: Metadata = {
   title: "Arjo — Save Together, Powered by Stablecoins",
   description:
-    "Arjo brings the trusted rotating savings circle on-chain. Pool funds with people you trust, earn yield, and get your payout in stablecoins — transparent, automated, and borderless.",
+    "Arjo brings the trusted rotating savings circle onchain. Pool funds with people you trust, earn yield, and get your payout in stablecoins — transparent, automated, and borderless.",
 };
 
 export default function RootLayout({

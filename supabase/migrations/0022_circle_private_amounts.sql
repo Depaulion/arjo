@@ -2,12 +2,12 @@
 --
 -- Aligns with Arc's privacy roadmap ("sensitive activity protected from public
 -- exposure, while authorized parties retain defined access") at the data layer
--- we control TODAY — no on-chain confidential-transfer cryptography is claimed.
+-- we control TODAY — no onchain confidential-transfer cryptography is claimed.
 --
 -- THE MODEL
 -- ---------
 -- Circle funds already pool into one shared vault, so per-member contribution
--- detail is never legible from a single on-chain address — it lives in the
+-- detail is never legible from a single onchain address — it lives in the
 -- ledger under RLS. This migration adds a per-circle switch that extends that
 -- protection to OTHER MEMBERS' views inside the app:
 --

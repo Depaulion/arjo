@@ -51,7 +51,7 @@ const PILLARS = [
   {
     icon: Award,
     title: "Badges & reputation",
-    body: "On-chain activity builds a reputation score and unlocks badges, so members can vouch for one another with verifiable history instead of blind trust.",
+    body: "onchain activity builds a reputation score and unlocks badges, so members can vouch for one another with verifiable history instead of blind trust.",
   },
   {
     icon: Vault,
@@ -186,7 +186,7 @@ export default function DocsPage() {
                 </strong>
               </p>
               <p>
-                Arjo brings that universal tradition on-chain — open to anyone,
+                Arjo brings that universal tradition onchain — open to anyone,
                 anywhere — replacing the cash box and the trusted bookkeeper with
                 transparent stablecoin transfers, automated payouts, and a public
                 ledger every member can verify.
@@ -197,7 +197,7 @@ export default function DocsPage() {
               <ol className="list-decimal space-y-3 pl-5 marker:text-primary">
                 <li>
                   <strong className="text-foreground">Sign in.</strong> Sign in
-                  with Google and a personal on-chain wallet is created for you
+                  with Google and a personal onchain wallet is created for you
                   automatically — no seed phrases to manage.
                 </li>
                 <li>
@@ -211,7 +211,7 @@ export default function DocsPage() {
                 <li>
                   <strong className="text-foreground">Contribute.</strong> Each
                   round, members send their contribution in stablecoins into the
-                  circle&apos;s pot. Everyone sees the same on-chain balance.
+                  circle&apos;s pot. Everyone sees the same onchain balance.
                 </li>
                 <li>
                   <strong className="text-foreground">Rotate the payout.</strong>{" "}
@@ -364,7 +364,7 @@ export default function DocsPage() {
                   <strong className="text-foreground">
                     Reputation you can verify.
                   </strong>{" "}
-                  Every contribution and payout is on-chain. Members build a
+                  Every contribution and payout is onchain. Members build a
                   reputation score and badges from real history, so you can see
                   who has reliably paid into past circles before you join one
                   with them.
@@ -374,7 +374,7 @@ export default function DocsPage() {
                     Transparent pot.
                   </strong>{" "}
                   No organiser hides the money. The circle balance is a public
-                  on-chain balance every member can audit on the block explorer,
+                  onchain balance every member can audit on the block explorer,
                   so a missed contribution is visible to everyone immediately.
                 </li>
                 <li>
@@ -423,7 +423,7 @@ export default function DocsPage() {
                     Pooled by design.
                   </strong>{" "}
                   Every circle&apos;s funds settle into one shared vault, so an
-                  on-chain observer sees flows in and out of the vault — not
+                  onchain observer sees flows in and out of the vault — not
                   &ldquo;this person contributed X to that circle.&rdquo; Per-member
                   attribution lives in the ledger, not in a public address.
                 </li>
@@ -452,7 +452,7 @@ export default function DocsPage() {
                 deliberately aligned with{" "}
                 <strong className="text-foreground">Arc&apos;s privacy
                 roadmap</strong> — confidential transfers with governed
-                visibility for real financial workflows. As those on-chain
+                visibility for real financial workflows. As those onchain
                 primitives ship, Arjo&apos;s model extends to settle the same
                 way it already presents: sensitive activity protected, authorised
                 parties retaining defined access.
@@ -510,9 +510,9 @@ export default function DocsPage() {
               <p className="flex items-start gap-2">
                 <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-primary" />
                 <span>
-                  Every transfer settles on-chain and is publicly verifiable on
+                  Every transfer settles onchain and is publicly verifiable on
                   the Arc block explorer. Circle balances aren&apos;t numbers in
-                  a private database — they&apos;re real on-chain balances anyone
+                  a private database — they&apos;re real onchain balances anyone
                   in the circle can audit.
                 </span>
               </p>
@@ -669,7 +669,7 @@ export default function DocsPage() {
                     What happens if a member stops paying?
                   </p>
                   <p>
-                    On-chain reputation, a transparent pot, early-exit penalties,
+                    onchain reputation, a transparent pot, early-exit penalties,
                     and governed exits with refund settlement all protect honest
                     members. See{" "}
                     <a
@@ -687,7 +687,7 @@ export default function DocsPage() {
                   </p>
                   <p>
                     No single person hides the money. Every contribution and
-                    payout is an on-chain transfer that all members can verify on
+                    payout is an onchain transfer that all members can verify on
                     the block explorer.
                   </p>
                 </div>

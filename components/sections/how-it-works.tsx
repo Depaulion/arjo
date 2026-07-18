@@ -22,7 +22,7 @@ const steps = [
     step: "03",
     title: "Receive your payout",
     description:
-      "When it's your turn, the full pot lands in your wallet instantly. Every contribution and payout is verifiable on-chain.",
+      "When it's your turn, the full pot lands in your wallet instantly. Every contribution and payout is verifiable onchain.",
   },
 ];
 

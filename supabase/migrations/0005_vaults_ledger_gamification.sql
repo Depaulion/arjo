@@ -1,7 +1,7 @@
--- Arjo — SafeLock vaults, on-chain ledger, gamification & challenges
+-- Arjo — SafeLock vaults, onchain ledger, gamification & challenges
 -- Phase B: turns the dashboard into a live, motivating savings product.
 --   * savings_plans  — PiggyVest/Cowrywise-style flex/locked/target/auto plans
---   * ledger_entries — a record of every USDC movement (on-chain or pending)
+--   * ledger_entries — a record of every USDC movement (onchain or pending)
 --   * challenges     — opt-in savings challenges that drive XP & streaks
 --   * profiles.xp/level/streak — lightweight gamification counters
 --
@@ -85,7 +85,7 @@ create trigger savings_plans_set_updated_at
 
 -- 3. Ledger: a record of every USDC movement ---------------------------------
 -- Written before a transfer is attempted (status 'pending'), then promoted to
--- 'confirmed' or 'failed'. The live on-chain balance is always authoritative;
+-- 'confirmed' or 'failed'. The live onchain balance is always authoritative;
 -- this table gives history, attribution, and graceful fallback when the Circle
 -- API is unavailable.
 create table if not exists public.ledger_entries (
@@ -108,7 +108,7 @@ create table if not exists public.ledger_entries (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.ledger_entries is 'Append-only record of USDC actions (contributions, locks, withdrawals, auto-saves, payouts). On-chain balance remains authoritative.';
+comment on table public.ledger_entries is 'Append-only record of USDC actions (contributions, locks, withdrawals, auto-saves, payouts). onchain balance remains authoritative.';
 comment on column public.ledger_entries.tx_hash is 'Arc transaction hash once the transfer is broadcast.';
 comment on column public.ledger_entries.circle_tx_id is 'Circle Programmable Wallets transaction id used to poll status.';
 

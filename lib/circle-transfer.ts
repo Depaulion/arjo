@@ -6,13 +6,13 @@ import { getCircleClient, isCircleConfigured } from "@/lib/circle";
 import { ARC_USDC_ADDRESS } from "@/lib/arc";
 
 /**
- * On-chain USDC transfers on Arc Testnet via Circle Programmable Wallets.
+ * onchain USDC transfers on Arc Testnet via Circle Programmable Wallets.
  *
  * Arc's USDC is exposed as an ERC-20 precompile at ARC_USDC_ADDRESS (6 decimals).
  * We move it with `createTransaction({ tokenAddress, blockchain, ... })`, which
  * avoids needing a Circle-side tokenId lookup. Callers should treat a thrown
  * error as "transfer not sent" and keep their ledger row in the `pending` state
- * for later reconciliation — the on-chain balance always stays authoritative.
+ * for later reconciliation — the onchain balance always stays authoritative.
  */
 
 export type SendUsdcParams = {
@@ -31,7 +31,7 @@ export type SendUsdcParams = {
 export type SendUsdcResult = {
   /** Circle transaction id (poll with getTransferStatus). */
   circleTxId: string;
-  /** On-chain hash once Circle has broadcast it (often null at creation time). */
+  /** onchain hash once Circle has broadcast it (often null at creation time). */
   txHash: string | null;
   /** Circle transaction state, e.g. INITIATED / SENT / CONFIRMED. */
   state: string | null;
@@ -57,7 +57,7 @@ export async function sendUsdc(
   params: SendUsdcParams
 ): Promise<SendUsdcResult> {
   if (!isCircleConfigured()) {
-    throw new Error("Circle is not configured; cannot send on-chain.");
+    throw new Error("Circle is not configured; cannot send onchain.");
   }
 
   const client = getCircleClient();

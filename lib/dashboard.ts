@@ -1,7 +1,7 @@
 /**
  * Server-side aggregator for the member dashboard.
  *
- * Does ONE on-chain scan of the member's wallet and derives everything the
+ * Does ONE onchain scan of the member's wallet and derives everything the
  * dashboard needs from it: balance, contribution streak, weekly cadence,
  * reputation score and the savings-coach analysis. Keeping it to a single scan
  * keeps the dashboard fast even though it powers several sections.
@@ -127,7 +127,7 @@ export async function getDashboardSnapshot(input: {
   });
 
   // Reputation: a neutral baseline lifted by reliability signals (streak,
-  // on-chain activity, circle commitment) and pulled down by defaults/flags, so
+  // onchain activity, circle commitment) and pulled down by defaults/flags, so
   // there is one coherent score rather than a separate "positive only" number.
   const reputationScore = computeReputationScore({
     streakWeeks,

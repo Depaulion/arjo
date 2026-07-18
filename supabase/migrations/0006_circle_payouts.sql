@@ -19,7 +19,7 @@ alter table public.circle_members
 comment on column public.circle_members.payout_address is 'Recipient Arc wallet (denormalized from profiles at join) so the pot owner can pay out without reading other members'' profiles under RLS.';
 comment on column public.circle_members.paid_out is 'True once this member has received their rotation payout.';
 comment on column public.circle_members.paid_at is 'When this member''s payout was sent.';
-comment on column public.circle_members.payout_tx_hash is 'On-chain hash of this member''s payout, once Circle broadcasts it.';
+comment on column public.circle_members.payout_tx_hash is 'onchain hash of this member''s payout, once Circle broadcasts it.';
 
 -- 2. Creator-scoped visibility without RLS recursion --------------------------
 -- A naive `exists (select 1 from circles ...)` policy on circle_members would

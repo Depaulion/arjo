@@ -6,7 +6,7 @@ funds with people you trust, automate payouts, and track everything transparentl
 onchain.
 
 Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase auth,
-Circle Programmable Wallets, and live on-chain USDC data with an AI circle-health
+Circle Programmable Wallets, and live onchain USDC data with an AI circle-health
 analysis layer.
 
 > **Note:** This runs against **Arc Testnet** with **Circle TEST keys** — it's a
@@ -17,7 +17,7 @@ analysis layer.
 - **Auth** — email/password + Google OAuth via Supabase.
 - **Programmable wallets** — a Circle developer-controlled wallet is auto-provisioned
   for each user on Arc Testnet.
-- **Live on-chain dashboard** — `/circles/[id]` reads real USDC balances and
+- **Live onchain dashboard** — `/circles/[id]` reads real USDC balances and
   transfers straight from the Arc RPC (no mock data).
 - **AI insights** — per-circle health score (0–100), risk-member flags,
   recommendations, and a 4-week stability forecast. Uses Claude when
@@ -95,4 +95,4 @@ In the Supabase **SQL Editor**, run the migrations in order:
    Google sign-in.
 6. **Verify** — sign up, confirm a profile + Circle wallet are created, open a
    circle, claim test USDC from the [Circle faucet](https://faucet.circle.com),
-   then refresh to see the on-chain balance and AI insights populate.
+   then refresh to see the onchain balance and AI insights populate.

@@ -131,7 +131,7 @@ $$;
 -- Governance needs the full member list (to build a payout order, pick who to
 -- remove, etc.). The base 0004 policy only exposed a member's own row. This adds
 -- co-member visibility via the definer helper (no recursion). Wallet addresses
--- are already public on-chain; no names/emails are exposed here.
+-- are already public onchain; no names/emails are exposed here.
 drop policy if exists "Members can view co-members" on public.circle_members;
 create policy "Members can view co-members"
   on public.circle_members for select

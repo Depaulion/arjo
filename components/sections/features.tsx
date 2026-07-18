@@ -39,7 +39,7 @@ const features = [
     icon: Globe2,
     title: "Borderless & instant",
     description:
-      "Save with anyone, anywhere. Payouts settle on-chain in seconds — no banks, no wire fees, no waiting.",
+      "Save with anyone, anywhere. Payouts settle onchain in seconds — no banks, no wire fees, no waiting.",
   },
   {
     icon: PiggyBank,

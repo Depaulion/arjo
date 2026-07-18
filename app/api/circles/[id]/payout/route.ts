@@ -36,8 +36,8 @@ type MemberRow = {
  * can't touch another's money.
  *
  * Like every USDC action here, the ledger row is written first; a failed
- * on-chain send leaves the row `pending` and the member un-paid so it can be
- * retried — the on-chain balance stays authoritative.
+ * onchain send leaves the row `pending` and the member un-paid so it can be
+ * retried — the onchain balance stays authoritative.
  */
 export async function POST(
   request: Request,

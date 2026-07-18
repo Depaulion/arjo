@@ -41,7 +41,7 @@ type ProfileSignals = {
 /**
  * Join a circle. Replaces the old raw client insert: enforces the reputation /
  * risk gates (lib/risk-engine.ts), posts the member's refundable bond into the
- * vault (ledger-first, on-chain best-effort), and only then records membership
+ * vault (ledger-first, onchain best-effort), and only then records membership
  * with the bond marked "held".
  */
 export async function POST(
@@ -142,7 +142,7 @@ export async function POST(
     .select("circle_id", { count: "exact", head: true })
     .eq("user_id", user.id);
 
-  // Score conservatively: omit positive on-chain signals (streak/contributions)
+  // Score conservatively: omit positive onchain signals (streak/contributions)
   // so the gate can only be stricter, never looser, than the dashboard score.
   const score = computeReputationScore({
     streakWeeks: 0,

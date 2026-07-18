@@ -18,7 +18,7 @@ export function Hero() {
         <div className="space-y-8">
           <Badge variant="outline">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            Ajo, reimagined on-chain
+            Ajo, reimagined onchain
           </Badge>
 
           <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
@@ -30,7 +30,7 @@ export function Hero() {
           </h1>
 
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Arjo brings the age-old rotating savings circle on-chain, the
+            Arjo brings the age-old rotating savings circle onchain, the
             practice known the world over as <em>ajo</em>, <em>esusu</em>,{" "}
             <em>tontine</em>, <em>susu</em>, <em>chama</em>, and{" "}
             <em>tanda</em>. Pool funds with people you trust, automate every

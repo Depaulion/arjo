@@ -133,7 +133,7 @@ export default async function CircleDashboardPage({
   const inviteCode = searchParams?.invite ?? null;
 
   // Real circles read pot/contributors/activity from the ledger (per-circle
-  // attribution in the shared vault); raw-address views still scan on-chain.
+  // attribution in the shared vault); raw-address views still scan onchain.
   const data = isRealCircle
     ? await getCircleLedgerFromDb(createClient(), input)
     : await getCircleLedger(input);
@@ -243,7 +243,7 @@ export default async function CircleDashboardPage({
     ? Math.min(100, Math.round((data.potBalance / targetPot) * 100))
     : null;
 
-  // Derive payment-reliability data for the AI analysis from on-chain
+  // Derive payment-reliability data for the AI analysis from onchain
   // contributors: rounds elapsed ≈ the most active contributor's transfer
   // count, and each contributor's reliability = their transfers / rounds.
   const roundsElapsed = data.contributors.reduce(
@@ -257,7 +257,7 @@ export default async function CircleDashboardPage({
     totalRounds: roundsElapsed,
   }));
 
-  // The "Overview" panel — the live on-chain dashboard. Shared by both the
+  // The "Overview" panel — the live onchain dashboard. Shared by both the
   // tabbed (real circle) and plain (raw-address) layouts.
   // Rotation round status (migration 0020). Shown for real circles that carry
   // round data; raw-address views leave these null.
@@ -341,7 +341,7 @@ export default async function CircleDashboardPage({
       {data.configured && !data.rpcOk && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="py-6 text-center text-sm text-destructive">
-            Couldn&apos;t reach the Arc Testnet RPC to load on-chain activity.
+            Couldn&apos;t reach the Arc Testnet RPC to load onchain activity.
             Try refreshing in a moment.
           </CardContent>
         </Card>
@@ -376,7 +376,7 @@ export default async function CircleDashboardPage({
               </>
             ) : (
               <p className="mt-3 text-xs text-muted-foreground">
-                Live on-chain USDC balance
+                Live onchain USDC balance
               </p>
             )}
           </CardContent>
@@ -546,7 +546,7 @@ export default async function CircleDashboardPage({
               <p className="text-sm text-muted-foreground">
                 {data.configured && data.rpcOk
                   ? "No USDC activity found in the scanned window yet."
-                  : "No on-chain activity to show."}
+                  : "No onchain activity to show."}
               </p>
               <a
                 href="https://faucet.circle.com"

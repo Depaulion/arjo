@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         const bal = await getUsdcBalance(row.wallet_address);
         walletLine = `💵 Wallet: ${fmt(bal)} USDC\n`;
       } catch {
-        /* on-chain read failed — omit the wallet line */
+        /* onchain read failed — omit the wallet line */
       }
     }
     await sendTelegramMessage(

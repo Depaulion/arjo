@@ -220,7 +220,7 @@ function CashOut({
         </div>
         <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-          On-chain transfers are irreversible. Double-check the address before
+          onchain transfers are irreversible. Double-check the address before
           confirming.
         </p>
         {error && <ErrorText>{error}</ErrorText>}

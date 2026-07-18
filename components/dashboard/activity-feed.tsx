@@ -241,7 +241,7 @@ export function ActivityFeed({
               {rows.map((e) => {
                 const meta = KIND_META[e.kind];
                 const status = STATUS_META[e.status];
-                // A pending off-ramp request: a withdraw with no on-chain
+                // A pending off-ramp request: a withdraw with no onchain
                 // footprint, so it will never auto-settle and can be cancelled.
                 const cancellable =
                   e.status === "pending" &&

@@ -29,7 +29,7 @@ type MemberRow = {
  *
  * Ledger-first, like every USDC action here: record the row, attempt the send,
  * settle it pending. A failed send leaves the row pending AND the member still
- * pending_exit, so the creator can retry — the on-chain balance stays
+ * pending_exit, so the creator can retry — the onchain balance stays
  * authoritative and the member is never removed before they are paid.
  */
 export async function POST(
@@ -183,7 +183,7 @@ export async function POST(
   }
   if (!isCircleConfigured()) {
     return NextResponse.json(
-      { error: "On-chain transfers aren't available right now." },
+      { error: "onchain transfers aren't available right now." },
       { status: 503 }
     );
   }
@@ -245,7 +245,7 @@ export async function POST(
         currency,
         ledgerId: ledger.id,
         error:
-          "The refund couldn't be sent on-chain. The member stays in the circle so you can retry.",
+          "The refund couldn't be sent onchain. The member stays in the circle so you can retry.",
       },
       { status: 502 }
     );

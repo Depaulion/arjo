@@ -98,7 +98,7 @@ $$;
 -- 5. Members whose round is DUE and who opted into auto-debit ------------------
 -- One row per (circle, member) that should be debited this run: round due now,
 -- auto_debit on, not already paid this round, not a defaulted member. Includes
--- the wallet so the cron can attempt the on-chain pull and the balance check.
+-- the wallet so the cron can attempt the onchain pull and the balance check.
 create or replace function public.due_auto_debits(p_secret text)
 returns table (
   circle_id uuid,
@@ -213,7 +213,7 @@ $$;
 -- 7. Record a successful auto-debit on behalf of the member -------------------
 -- Inserts the contribution ledger row and marks the round paid (idempotent).
 -- SECURITY DEFINER so the cron (no user session) can write a member's row;
--- gated by the cron secret. The on-chain send is done by the cron in Node — this
+-- gated by the cron secret. The onchain send is done by the cron in Node — this
 -- only persists the result, exactly like the user-initiated contribute route.
 create or replace function public.record_auto_debit(
   p_secret text,

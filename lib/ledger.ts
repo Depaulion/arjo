@@ -5,7 +5,7 @@ import type { ArcStablecoin } from "@/lib/arc";
 
 /**
  * Helpers for the append-only ledger. Every USDC action records a row *before*
- * the on-chain transfer is attempted (status 'pending'), then is promoted to
+ * the onchain transfer is attempted (status 'pending'), then is promoted to
  * 'confirmed' or 'failed'. RLS enforces user_id = auth.uid(), so these run with
  * the cookie-session server client.
  */

@@ -185,7 +185,7 @@ export async function POST(
     }
     if (!isCircleConfigured()) {
       return NextResponse.json(
-        { error: "On-chain transfers aren't available right now." },
+        { error: "onchain transfers aren't available right now." },
         { status: 503 }
       );
     }
@@ -247,7 +247,7 @@ export async function POST(
         txHash: res.txHash,
       });
       // Record the yield portion as its own auditable entry, sharing the same
-      // on-chain transfer (no separate send).
+      // onchain transfer (no separate send).
       if (bondEarned > 0) {
         const yieldLedger = await recordLedgerEntry(supabase, {
           userId: targetUserId,
@@ -283,7 +283,7 @@ export async function POST(
           currency,
           ledgerId: ledger.id,
           error:
-            "The bond refund couldn't be sent on-chain. The bond stays held so you can retry.",
+            "The bond refund couldn't be sent onchain. The bond stays held so you can retry.",
         },
         { status: 502 }
       );

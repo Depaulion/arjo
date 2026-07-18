@@ -18,11 +18,11 @@ const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
  * Unlike a SafeLock withdrawal (vault → wallet) or a circle payout (pot →
  * member), this moves the user's liquid balance off-platform. The wallet is
  * developer-controlled, so the backend signs the transfer — which makes the
- * confirmation UX and the on-chain balance check the real safeguards here.
+ * confirmation UX and the onchain balance check the real safeguards here.
  *
  * Follows the ledger-first pattern: record the row, attempt the send, then
  * settle it pending. A failed send leaves the row pending for reconciliation;
- * the on-chain balance stays authoritative.
+ * the onchain balance stays authoritative.
  */
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -67,12 +67,12 @@ export async function POST(request: Request) {
 
   if (!isCircleConfigured()) {
     return NextResponse.json(
-      { error: "On-chain transfers aren't available right now." },
+      { error: "onchain transfers aren't available right now." },
       { status: 503 }
     );
   }
 
-  // Guard against overdrawing — the on-chain balance is the source of truth.
+  // Guard against overdrawing — the onchain balance is the source of truth.
   let balance: number;
   try {
     balance = await getUsdcBalance(wallet.address);

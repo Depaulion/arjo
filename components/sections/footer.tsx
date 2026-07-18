@@ -75,7 +75,7 @@ export function Footer() {
               </span>
             </div>
             <p className="max-w-xs text-sm text-muted-foreground">
-              Rotating savings circles, reimagined on-chain with stablecoins.
+              Rotating savings circles, reimagined onchain with stablecoins.
               An age-old <em>ajo</em> tradition practised the world over — built
               for everyone, everywhere.
             </p>

@@ -10,7 +10,7 @@ import { settleLedgerEntry } from "@/lib/ledger";
  * Settlement reconciler. Pending ledger rows that carry a Circle transaction id
  * are polled against Circle's state machine
  * (INITIATED → CLEARED → QUEUED → SENT → CONFIRMED → COMPLETE) and promoted to
- * `confirmed` (capturing the on-chain Arc tx hash) or `failed`. Rows still in
+ * `confirmed` (capturing the onchain Arc tx hash) or `failed`. Rows still in
  * flight are left untouched for the next sync.
  *
  * Runs in the user's session against the cookie-bound client, so RLS limits it
@@ -63,7 +63,7 @@ export async function reconcilePendingLedger(
       } else if (status.failed) {
         await settleLedgerEntry(supabase, row.id, {
           status: "failed",
-          note: `On-chain state: ${status.state ?? "failed"}`,
+          note: `onchain state: ${status.state ?? "failed"}`,
         });
         summary.failed += 1;
       } else {

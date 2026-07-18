@@ -8,7 +8,7 @@
  * balance grows a little every day. That accrual — NOT platform subsidy, NOT new
  * token emissions — is the yield Arjo passes through to savers.
  *
- * USYC is REAL on Arc — see lib/usyc.ts for the on-chain integration (token,
+ * USYC is REAL on Arc — see lib/usyc.ts for the onchain integration (token,
  * Teller mint/redeem, allowlist). This module is the *attribution model*: given
  * a principal and a holding period it computes the yield share, daily-compounded
  * at a rate that tracks the published USYC rate. When live USYC is enabled

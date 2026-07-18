@@ -25,7 +25,7 @@ export function WalletPanel({
   currency = "USDC",
 }: {
   address: string;
-  /** On-chain USDC balance, or null if it couldn't be read. */
+  /** onchain USDC balance, or null if it couldn't be read. */
   balance: number | null;
   explorerUrl: string;
   currency?: string;

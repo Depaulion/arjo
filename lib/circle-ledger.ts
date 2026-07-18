@@ -120,7 +120,7 @@ export async function getCircleLedger(
 }
 
 // --- DB-derived dashboard (the pot lives in the shared vault, migration 0019) -
-// Once contributions flow into the commingled platform vault, a single on-chain
+// Once contributions flow into the commingled platform vault, a single onchain
 // address can no longer represent one circle's pot. These shapes mirror the
 // SECURITY DEFINER RPCs (circle_pot_summary / circle_contributors /
 // circle_ledger_feed) that attribute pot activity per circle from the ledger.
@@ -164,7 +164,7 @@ const num = (v: number | string | null | undefined): number => {
 
 /**
  * Build a circle dashboard from the LEDGER (per-circle attribution) instead of a
- * single on-chain address — the correct source now that every circle's pot is
+ * single onchain address — the correct source now that every circle's pot is
  * pooled in the shared vault. Falls back to an empty (but configured) ledger if
  * the RPCs error, so the page renders a clean state rather than crashing.
  */

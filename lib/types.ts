@@ -352,11 +352,11 @@ export type Challenge = {
   updated_at: string;
 };
 
-// --- Contribution dashboard (live Arc on-chain USDC data) ---
+// --- Contribution dashboard (live Arc onchain USDC data) ---
 
 export type { UsdcTransfer, TransferDirection } from "@/lib/arc-onchain";
 
-/** One distinct on-chain contributor (an address that sent USDC to the pot). */
+/** One distinct onchain contributor (an address that sent USDC to the pot). */
 export type Contributor = {
   address: string;
   /** Total USDC sent into the pot. */
@@ -388,7 +388,7 @@ export type CircleLedger = {
   configured: boolean;
   /** True if the Arc RPC responded. */
   rpcOk: boolean;
-  /** Current on-chain USDC balance of the pot wallet. */
+  /** Current onchain USDC balance of the pot wallet. */
   potBalance: number;
   /** Sum of all incoming USDC (contributions) in the scanned window. */
   totalContributed: number;

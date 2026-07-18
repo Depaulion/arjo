@@ -39,7 +39,7 @@ import { erc20BalanceOf } from "@/lib/arc-onchain";
  *   1. Get ARC_VAULT_ADDRESS allowlisted via Circle Support.
  *   2. Confirm the deployed Teller's mint/redeem function signatures and set
  *      ARC_USYC_TELLER_MINT_FN / ARC_USYC_TELLER_REDEEM_FN (defaults below are
- *      the conventional Hashnote Teller shape and MUST be verified on-chain).
+ *      the conventional Hashnote Teller shape and MUST be verified onchain).
  *   3. Set ARC_USYC_ENABLED=true.
  *
  * Read paths (balanceOf) are standard ERC-20 and work for any address without
@@ -104,7 +104,7 @@ function toUnits(amount: number): string {
 }
 
 /**
- * Live on-chain USYC balance (whole tokens) of an address. Standard ERC-20
+ * Live onchain USYC balance (whole tokens) of an address. Standard ERC-20
  * read — works regardless of allowlist status, so this is always truthful.
  */
 export async function getUsycBalance(address: string): Promise<number> {
@@ -209,7 +209,7 @@ export async function mintUsycFromUsdc(params: {
 /**
  * Redeem `usycAmount` of USYC back to USDC via the Teller. Gated by
  * isUsycEnabled(). Callers should treat a throw as "not redeemed" and keep the
- * dependent ledger row pending — the on-chain balance stays authoritative.
+ * dependent ledger row pending — the onchain balance stays authoritative.
  */
 export async function redeemUsycToUsdc(params: {
   walletId: string;

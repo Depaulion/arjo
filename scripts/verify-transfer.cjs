@@ -1,4 +1,4 @@
-// End-to-end on-chain transfer test. Mirrors lib/circle-transfer.ts (sendUsdc)
+// End-to-end onchain transfer test. Mirrors lib/circle-transfer.ts (sendUsdc)
 // and lib/reconcile.ts (getTransferStatus): initiates a real USDC transfer from
 // the Circle wallet to the demo address, then polls Circle until the tx settles
 // to CONFIRMED/COMPLETE (or a terminal failure). Moves 1 testnet USDC.

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
  * Circle's faucet API isn't available to this API key, so claiming happens on
  * Circle's hosted faucet. To make that one-click-smooth we copy the user's Arc
  * address to the clipboard and open the faucet in a new tab, so they only have
- * to paste + claim. A Refresh button re-reads the on-chain balance afterward.
+ * to paste + claim. A Refresh button re-reads the onchain balance afterward.
  */
 export function ClaimButton({
   address,
@@ -21,7 +21,7 @@ export function ClaimButton({
   currency = "USDC",
 }: {
   address: string;
-  /** Current on-chain balance, or null if unknown — drives the copy. */
+  /** Current onchain balance, or null if unknown — drives the copy. */
   balance: number | null;
   currency?: string;
 }) {

@@ -7,7 +7,7 @@
 -- This migration is the database half of moving the pot into the shared platform
 -- vault (the single SCA wallet that already holds SafeLock principal and bonds).
 -- The vault commingles every circle's funds, so per-circle attribution can no
--- longer be read from a single on-chain address — the LEDGER becomes the source
+-- longer be read from a single onchain address — the LEDGER becomes the source
 -- of truth for "how much does circle X hold". These SECURITY DEFINER helpers let
 -- the creator and members read that attribution without a service-role key and
 -- without tripping the strict owner-scoped RLS on ledger_entries.
@@ -172,7 +172,7 @@ $$;
 -- 5. Recent activity feed for the circle --------------------------------------
 -- The circle's own ledger rows (contributions + payouts + exit refunds), newest
 -- first, so the dashboard can show real per-circle transfers with explorer
--- links — replacing the old single-address on-chain scan that breaks once funds
+-- links — replacing the old single-address onchain scan that breaks once funds
 -- are commingled in the vault.
 create or replace function public.circle_ledger_feed(p_circle_id uuid, p_limit integer default 25)
 returns table (

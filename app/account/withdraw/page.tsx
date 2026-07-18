@@ -43,7 +43,7 @@ export default async function WithdrawPage() {
   const walletAddress = profile?.arc_wallet_address ?? null;
   const currency = profile?.preferred_stablecoin ?? "USDC";
 
-  // Liquid on-chain balance (source of truth for cash-out limits).
+  // Liquid onchain balance (source of truth for cash-out limits).
   let balance: number | null = null;
   if (walletAddress) {
     try {

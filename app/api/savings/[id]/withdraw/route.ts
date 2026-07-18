@@ -110,7 +110,7 @@ export async function POST(
       planId: plan.id,
       status: "confirmed",
       // Be explicit about whether this is a real USYC payout or a simulated
-      // testnet preview, so the ledger never overstates what's backed on-chain.
+      // testnet preview, so the ledger never overstates what's backed onchain.
       note:
         yieldMode() === "live"
           ? "USYC yield (live, Treasury-backed)"
@@ -173,7 +173,7 @@ export async function POST(
   }
 
   // Mark the plan withdrawn regardless of transfer state; the ledger tracks the
-  // money movement and the on-chain balance stays authoritative.
+  // money movement and the onchain balance stays authoritative.
   const { data: updated } = await supabase
     .from("savings_plans")
     .update({ status: "withdrawn" })

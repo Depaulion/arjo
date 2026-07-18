@@ -520,7 +520,7 @@ function ProposalCard({
     : undefined;
 
   // An approved exit/removal that the creator still needs to settle (refund the
-  // leaving member's net contributions on-chain, then remove them).
+  // leaving member's net contributions onchain, then remove them).
   const isExit =
     proposal.type === "MEMBER_EXIT_REQUEST" ||
     proposal.type === "MEMBER_REMOVAL";

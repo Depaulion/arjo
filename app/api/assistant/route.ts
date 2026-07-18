@@ -84,7 +84,7 @@ async function gatherContext(
   return {
     firstName: profile?.full_name?.split(" ")[0] ?? null,
     currency,
-    walletBalance: null, // on-chain read is slow; omitted to keep replies snappy
+    walletBalance: null, // onchain read is slow; omitted to keep replies snappy
     totalLocked: Math.round(totalLocked * 100) / 100,
     yieldEarned: Math.round(yieldEarned * 100) / 100,
     plans: plans.map((p) => ({

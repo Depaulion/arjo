@@ -1,6 +1,6 @@
 -- Arjo — Circle Exit Settlement
 -- Closes the gap left by 0007: when a MEMBER_EXIT_REQUEST or MEMBER_REMOVAL is
--- approved, the member's net contributions should be returned to them on-chain
+-- approved, the member's net contributions should be returned to them onchain
 -- before they leave. The original execute_proposal deleted the membership row
 -- outright and refunded nothing.
 --
@@ -19,7 +19,7 @@ alter table public.circle_members
   add column if not exists pending_exit boolean not null default false;
 
 comment on column public.circle_members.pending_exit is
-  'True when an approved exit/removal proposal is awaiting on-chain refund of the member''s net contributions, before the membership is removed.';
+  'True when an approved exit/removal proposal is awaiting onchain refund of the member''s net contributions, before the membership is removed.';
 
 -- 2. Rework execute_proposal: defer exit/removal to settlement -----------------
 -- PAYOUT_ORDER_CHANGE and RULE_CHANGE still execute immediately. Exit/removal
@@ -56,7 +56,7 @@ begin
 
   elsif v.type in ('MEMBER_EXIT_REQUEST', 'MEMBER_REMOVAL') then
     -- Flag for settlement; do NOT remove the member yet. The proposal stays
-    -- APPROVED until the refund is settled on-chain (finalize_member_exit).
+    -- APPROVED until the refund is settled onchain (finalize_member_exit).
     if v.target_user_id is not null then
       update public.circle_members
         set pending_exit = true

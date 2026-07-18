@@ -8,11 +8,11 @@
  */
 
 export type SavingsCoachInput = {
-  /** Current on-chain USDC balance (whole USDC), or null if unreadable. */
+  /** Current onchain USDC balance (whole USDC), or null if unreadable. */
   balance: number | null;
   /** Total USDC the member has contributed into pots (sum of outgoing). */
   totalContributed: number;
-  /** Number of contribution transactions seen on-chain. */
+  /** Number of contribution transactions seen onchain. */
   contributionCount: number;
   /** Consecutive weeks (up to now) with at least one contribution. */
   streakWeeks: number;

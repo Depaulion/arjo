@@ -1,5 +1,5 @@
 /**
- * Read-only Arc Testnet on-chain access for USDC.
+ * Read-only Arc Testnet onchain access for USDC.
  *
  * Arc emits a single ERC-20 `Transfer` event for ALL USDC movement (native
  * sends and `transfer()` calls) on the USDC contract, so one event gives full
