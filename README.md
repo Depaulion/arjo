@@ -3,7 +3,7 @@
 Stablecoin-powered group savings, inspired by the age-old **ajo** rotating-savings
 tradition practised the world over — rebuilt on the **Arc (Circle) Testnet**. Pool
 funds with people you trust, automate payouts, and track everything transparently
-on-chain.
+onchain.
 
 Built with Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase auth,
 Circle Programmable Wallets, and live on-chain USDC data with an AI circle-health
