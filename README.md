@@ -84,7 +84,7 @@ In the Supabase **SQL Editor**, run the migrations in order:
 
 1. **Supabase** — create a project, run the migrations above, copy the Project URL
    + anon key.
-2. **Push to GitHub** — e.g. `gh repo create arc-ajo --private --source=. --push`.
+2. **Push to GitHub** — e.g. `gh repo create Arjo --private --source=. --push`.
 3. **Import** the repo at [vercel.com/new](https://vercel.com/new). Next.js is
    auto-detected — no `vercel.json` needed.
 4. **Set env vars** (table above) in Vercel → Settings → Environment Variables,
