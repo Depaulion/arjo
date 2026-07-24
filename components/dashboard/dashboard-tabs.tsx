@@ -5,6 +5,7 @@ import {
   BarChart3,
   History,
   Home,
+  Settings,
   Sparkles,
   Target,
   Users,
@@ -103,13 +104,54 @@ export function DashboardTabs({
     settings,
   };
 
+  // Sidebar shows the tabs plus Settings (reachable via the header menu on
+  // mobile, but a first-class nav item on desktop).
+  const NAV: { id: View; label: string; icon: typeof Home }[] = [
+    ...TABS.map((t) => ({ id: t.id as View, label: t.label, icon: t.icon })),
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
   return (
     <>
-      <main className="container max-w-3xl space-y-5 py-6 pb-28">
-        {views[active]}
-      </main>
+      {/* On desktop (lg+) a two-column app: a sticky sidebar nav beside a wide
+          content area. On mobile it collapses to a single centered column with
+          the floating bottom nav below. */}
+      <div className="mx-auto w-full max-w-6xl px-4 lg:flex lg:gap-8 lg:px-6 lg:py-8">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block lg:w-56 lg:shrink-0">
+          <nav className="sticky top-24 space-y-1">
+            {NAV.map((it) => {
+              const Icon = it.icon;
+              const isActive = active === it.id;
+              return (
+                <button
+                  key={it.id}
+                  type="button"
+                  onClick={() => select(it.id)}
+                  aria-current={isActive ? "true" : undefined}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {it.label}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-      <nav className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4">
+        {/* Content — narrow & centered on mobile, wide & flexible on desktop. */}
+        <main className="mx-auto max-w-3xl space-y-5 py-6 pb-28 lg:mx-0 lg:max-w-none lg:flex-1 lg:py-0 lg:pb-0">
+          {views[active]}
+        </main>
+      </div>
+
+      {/* Mobile floating bottom nav (hidden on desktop, which uses the sidebar). */}
+      <nav className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex justify-center px-4 lg:hidden">
         <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border/60 bg-card/80 p-1.5 shadow-xl shadow-black/20 backdrop-blur-md">
           {TABS.map((it) => {
             const Icon = it.icon;
