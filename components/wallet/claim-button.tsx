@@ -31,12 +31,26 @@ export function ClaimButton({
 
   const empty = balance === null || balance <= 0;
 
+  // Copy the user's Arc address and open Circle's hosted faucet so they only
+  // have to paste + claim.
+  async function claim() {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 4000);
+    } catch {
+      // Clipboard unavailable (insecure context) — still open the faucet.
+    }
+    window.open(ARC_TESTNET.faucetUrl, "_blank", "noopener,noreferrer");
+  }
+
   function handleClaim() {
-  claim();
-  setTimeout(() => {
-    startRefresh(() => router.refresh());
-  }, 15000);
-}
+    void claim();
+    // Faucet claims take a few seconds to land; auto-refresh the balance after.
+    setTimeout(() => {
+      startRefresh(() => router.refresh());
+    }, 15000);
+  }
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/10 to-accent/10 p-4 sm:flex-row sm:items-center sm:justify-between">
