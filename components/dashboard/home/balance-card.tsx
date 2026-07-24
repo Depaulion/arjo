@@ -20,10 +20,13 @@ function fmt(n: number) {
 }
 
 /**
- * Hero balance card — the single most important element on Home. Answers
- * "how much do I have?" at a glance: total savings up top, with the available
- * and locked split below, plus what the vaults earned in the last 24h so the
- * money visibly works every day. Tap the eye to privacy-hide the figures.
+ * Hero balance card — the single most important element on Home. The headline
+ * is the GENUINE available (liquid) wallet balance — the real spendable amount —
+ * NOT available + locked. Summing them made the number appear to grow when a
+ * user saved (locked principal is recorded instantly, but the wallet only drops
+ * once the transfer settles), which double-counted the money. Locked savings and
+ * the combined total are shown below as clearly-labelled secondary figures. Tap
+ * the eye to privacy-hide the figures.
  */
 export function BalanceCard({
   total,
@@ -59,7 +62,7 @@ export function BalanceCard({
             onClick={() => setHidden((v) => !v)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white/80 transition-colors hover:text-white"
           >
-            Total Savings
+            Available balance
             {hidden ? (
               <EyeOff className="h-4 w-4" />
             ) : (
@@ -76,7 +79,7 @@ export function BalanceCard({
         </div>
 
         <p className="mt-3 text-4xl font-bold tracking-tight">
-          {hidden ? mask : fmt(total)}
+          {hidden ? mask : fmt(available)}
           <span className="ml-2 text-lg font-semibold text-white/80">
             {currency}
           </span>
@@ -105,21 +108,21 @@ export function BalanceCard({
 
         <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/15 pt-4">
           <div>
-            <p className="text-xs text-white/70">Available</p>
+            <p className="flex items-center gap-1 text-xs text-white/70">
+              <Lock className="h-3 w-3" />
+              Locked in vaults
+            </p>
             <p className="mt-0.5 text-lg font-semibold">
-              {hidden ? mask : fmt(available)}{" "}
+              {hidden ? mask : fmt(locked)}{" "}
               <span className="text-sm font-medium text-white/70">
                 {currency}
               </span>
             </p>
           </div>
           <div className="border-l border-white/15 pl-4">
-            <p className="flex items-center gap-1 text-xs text-white/70">
-              <Lock className="h-3 w-3" />
-              Locked in Vaults
-            </p>
+            <p className="text-xs text-white/70">Total (incl. savings)</p>
             <p className="mt-0.5 text-lg font-semibold">
-              {hidden ? mask : fmt(locked)}{" "}
+              {hidden ? mask : fmt(total)}{" "}
               <span className="text-sm font-medium text-white/70">
                 {currency}
               </span>
