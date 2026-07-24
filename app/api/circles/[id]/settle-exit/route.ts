@@ -174,7 +174,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "This member hasn't linked an Arc wallet, so the refund can't be sent. They stay in the circle until that's resolved.",
+          "This member hasn't linked a wallet, so the refund can't be sent. They stay in the circle until that's resolved.",
         refund,
         currency,
       },

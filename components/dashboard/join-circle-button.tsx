@@ -52,7 +52,7 @@ export function JoinCircleButton({
             : "";
         setNotice(
           json.pending
-            ? `Joined. Bond of ${json.bond} ${json.currency}${surcharge} is pending — fund your Arc wallet and it will settle.`
+            ? `Joined. Bond of ${json.bond} ${json.currency}${surcharge} is pending — fund your wallet and it will settle.`
             : `Joined. ${json.bond} ${json.currency}${surcharge} bond is held and earns ~8% APY (USYC, Treasury-backed) — you get it back with the yield when you finish in good standing.`
         );
       }

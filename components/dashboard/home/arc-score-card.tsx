@@ -15,9 +15,10 @@ const RISK_BADGE_CLASS: Record<RiskTier, string> = {
 };
 
 /**
- * A single, consolidated reputation number — the Arc Score /100 — replacing the
- * old scatter of stability/engagement/health percentages. Tap to expand the
- * factors that drive it.
+ * A single, consolidated reputation number — the Trust Score /100 — replacing
+ * the old scatter of stability/engagement/health percentages. Tap to expand the
+ * factors that drive it. (Named "Trust Score", not "Arc Score": per Arc's brand
+ * guidelines, Arc is the infrastructure we build on, not a feature brand.)
  */
 export function ArcScoreCard({
   score,
@@ -89,7 +90,7 @@ export function ArcScoreCard({
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            Arc Score
+            Trust Score
             {badge && (
               <span
                 className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal ${RISK_BADGE_CLASS[riskTier as RiskTier]}`}

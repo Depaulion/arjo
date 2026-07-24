@@ -112,7 +112,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "The next member in the rotation hasn't linked an Arc wallet yet, so the pot can't be paid out to them.",
+          "The next member in the rotation hasn't linked a wallet yet, so the pot can't be paid out to them.",
       },
       { status: 409 }
     );

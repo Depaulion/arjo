@@ -178,7 +178,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "This member hasn't linked an Arc wallet, so the bond can't be refunded yet.",
+            "This member hasn't linked a wallet, so the bond can't be refunded yet.",
         },
         { status: 409 }
       );

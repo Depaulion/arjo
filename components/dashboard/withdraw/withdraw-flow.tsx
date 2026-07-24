@@ -159,7 +159,7 @@ function CashOut({
   if (!walletAddress) {
     return (
       <Notice>
-        Your Arc wallet is still being set up. Once it&apos;s ready you can cash
+        Your wallet is still being set up. Once it&apos;s ready you can cash
         out to any address.
       </Notice>
     );

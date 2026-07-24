@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Prominent top-of-dashboard notice shown when a signed-in user doesn't yet
- * have an Arc wallet — i.e. automatic provisioning (OAuth callback + server
+ * have a wallet — i.e. automatic provisioning (OAuth callback + server
  * fallback) didn't complete. Lets them retry on demand so they're never stuck
  * without the wallet needed to claim test USDC and interact onchain.
  */
@@ -61,7 +61,7 @@ export function WalletSetupBanner({
         </span>
         <div>
           <p className="font-semibold">
-            {error ? "Wallet setup didn't finish" : "Setting up your Arc wallet"}
+            {error ? "Wallet setup didn't finish" : "Setting up your wallet"}
           </p>
           <p className="text-sm text-muted-foreground">
             {error ? (

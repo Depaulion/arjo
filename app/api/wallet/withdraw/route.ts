@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 /**
- * Cash-out: send USDC from the user's own Arc wallet to an external address.
+ * Cash-out: send USDC from the user's own wallet to an external address.
  *
  * Unlike a SafeLock withdrawal (vault → wallet) or a circle payout (pot →
  * member), this moves the user's liquid balance off-platform. The wallet is

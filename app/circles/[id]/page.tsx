@@ -81,7 +81,7 @@ function siteBaseUrl(): string {
 }
 
 /**
- * Resolve which Arc wallet acts as this circle's pot:
+ * Resolve which wallet acts as this circle's pot:
  *  1. the route id itself, if it's an EVM address (view any address directly);
  *  2. the shared platform vault — the pot now lives there, not in the creator's
  *     wallet, so members never trust the creator to custody the pool;
@@ -89,7 +89,7 @@ function siteBaseUrl(): string {
  */
 async function resolveCircle(id: string): Promise<CircleLedgerInput> {
   if (isEvmAddress(id)) {
-    return { id, name: "Arc circle", address: id.toLowerCase() };
+    return { id, name: "Savings circle", address: id.toLowerCase() };
   }
 
   try {
@@ -332,7 +332,7 @@ export default async function CircleDashboardPage({
       {!data.configured && (
         <Card className="border-dashed">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No Arc wallet is linked to this circle yet. Once the creator&apos;s
+            No wallet is linked to this circle yet. Once the creator&apos;s
             Circle wallet is provisioned, contributions made in USDC on Arc
             Testnet will appear here automatically.
           </CardContent>
@@ -571,7 +571,7 @@ export default async function CircleDashboardPage({
       <p className="text-center text-xs text-muted-foreground">
         {data.rpcOk && data.scannedFromBlock !== null
           ? `Live data from Arc Testnet · scanned blocks ${data.scannedFromBlock.toLocaleString()}–${data.latestBlock?.toLocaleString()}.`
-          : "Connect a funded Arc wallet to see live USDC contributions."}
+          : "Connect a funded wallet to see live USDC contributions."}
       </p>
     </>
   );

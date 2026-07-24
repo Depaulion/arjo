@@ -162,7 +162,7 @@ export function SavingsPlans({
     }
     if (json.pending) {
       setNotice(
-        "Plan created. onchain transfer is pending — fund your Arc wallet and it will settle."
+        "Plan created. onchain transfer is pending — fund your wallet and it will settle."
       );
     } else if (json.transfer) {
       setNotice("Plan created and USDC moved onchain.");
@@ -280,7 +280,7 @@ export function SavingsPlans({
       {!onChainEnabled && (
         <p className="rounded-xl border border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
           onchain transfers are off (no wallet or Circle keys). Plans are still
-          tracked; deposits stay pending until a funded Arc wallet is connected.
+          tracked; deposits stay pending until a funded wallet is connected.
         </p>
       )}
 

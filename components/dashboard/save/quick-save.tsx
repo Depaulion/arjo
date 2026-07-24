@@ -15,7 +15,7 @@ const PRESETS = [5, 10, 20] as const;
 /**
  * Quick Save — one-tap deposits into a flexible (no-lock) vault. The fastest
  * path to "save a little right now": pick +5/+10/+20 or a custom amount and the
- * funds move from the user's Arc wallet into the flex vault onchain (via the
+ * funds move from the user's wallet into the flex vault onchain (via the
  * existing /api/savings/lock flex plan, ledger-first).
  */
 export function QuickSave({
@@ -166,7 +166,7 @@ export function QuickSave({
       {!onChainEnabled && (
         <p className="mt-3 text-xs text-muted-foreground">
           onchain transfers are off — saves are tracked and settle once a funded
-          Arc wallet is connected.
+          wallet is connected.
         </p>
       )}
       {notice && <p className="mt-3 text-xs font-medium text-primary">{notice}</p>}

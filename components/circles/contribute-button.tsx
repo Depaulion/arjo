@@ -52,7 +52,7 @@ export function ContributeButton({
     }
     setNotice(
       json.pending
-        ? `Recorded ${value} ${currency}. onchain transfer is pending — fund your Arc wallet to settle it.`
+        ? `Recorded ${value} ${currency}. onchain transfer is pending — fund your wallet to settle it.`
         : `Contributed ${value} ${currency} to the pot.`
     );
     setOpen(false);

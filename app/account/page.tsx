@@ -142,7 +142,7 @@ export default async function AccountPage() {
   };
 
   // Fallback auto-provisioning: guarantee every signed-in user has their own
-  // Arc wallet — even if the OAuth-callback attempt failed (Circle slow/down at
+  // wallet — even if the OAuth-callback attempt failed (Circle slow/down at
   // sign-in). Idempotent: returns the existing wallet if one already exists, so
   // this is a no-op on every load after the first. The wallet is what powers
   // claiming test USDC from the Circle faucet and all onchain interactions.
@@ -870,7 +870,7 @@ export default async function AccountPage() {
             <CardHeader>
               <CardTitle className="text-lg">Account settings</CardTitle>
               <CardDescription>
-                Update your name, Arc wallet, and preferred stablecoin.
+                Update your name, wallet, and preferred stablecoin.
               </CardDescription>
             </CardHeader>
             <CardContent>

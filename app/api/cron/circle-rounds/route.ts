@@ -226,7 +226,7 @@ async function handle(request: Request) {
         // Member opted in but never linked a wallet — can't pull. Notify, skip.
         await notifyDue(
           "auto_debit_failed",
-          `Auto-debit for "${d.circle_name}" couldn't run — link an Arc wallet to enable automatic contributions.`
+          `Auto-debit for "${d.circle_name}" couldn't run — link a wallet to enable automatic contributions.`
         );
         summary.noWallet += 1;
         continue;
