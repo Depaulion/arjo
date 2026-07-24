@@ -475,7 +475,7 @@ export default async function AccountPage() {
   return (
     <div className="min-h-screen scroll-smooth bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 lg:px-6">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Coins className="h-5 w-5" />

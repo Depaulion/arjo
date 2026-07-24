@@ -88,9 +88,12 @@ export function BalanceCard({
         {(monthDelta > 0 || earnedToday > 0) && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {monthDelta > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium backdrop-blur">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-                +{hidden ? mask : fmt(monthDelta)} {currency} this month
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium backdrop-blur"
+                title="Total you moved into savings and circles this month"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                +{hidden ? mask : fmt(monthDelta)} {currency} saved this month
               </span>
             )}
             {earnedToday > 0 && (
