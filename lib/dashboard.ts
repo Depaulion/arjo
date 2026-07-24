@@ -80,16 +80,23 @@ export async function getDashboardSnapshot(input: {
   let transfers: UsdcTransfer[] = [];
 
   if (walletAddress) {
-    try {
-      const [balance, scan] = await Promise.all([
-        getUsdcBalance(walletAddress),
-        getUsdcTransfers(walletAddress, { maxTransfers: 60 }),
-      ]);
-      walletBalance = balance;
-      transfers = scan.transfers;
+    // The balance read (a single, reliable eth_call) and the transfer scan (a
+    // heavier, chunked eth_getLogs) are fetched INDEPENDENTLY: a failure in the
+    // log scan must never null out the balance. Previously they shared one
+    // Promise.all/try, so a scan hiccup hid the wallet balance entirely (e.g.
+    // faucet-claimed USDC "not reflecting"), even though the balance itself was
+    // fine. Kept parallel via allSettled so they still run concurrently.
+    const [balanceRes, scanRes] = await Promise.allSettled([
+      getUsdcBalance(walletAddress),
+      getUsdcTransfers(walletAddress, { maxTransfers: 60 }),
+    ]);
+    if (balanceRes.status === "fulfilled") {
+      walletBalance = balanceRes.value;
       rpcOk = true;
-    } catch {
-      rpcOk = false;
+    }
+    if (scanRes.status === "fulfilled") {
+      transfers = scanRes.value.transfers;
+      rpcOk = true;
     }
   }
 
