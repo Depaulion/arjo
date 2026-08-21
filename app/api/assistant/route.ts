@@ -9,6 +9,7 @@ import {
   fallbackAnswer,
   type AssistantContext,
 } from "@/lib/assistant";
+import { clientKey, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import type { SavingsGoal, SavingsPlan } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -147,6 +148,10 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  // Cap assistant calls (each can hit the paid Claude API) — 20/min per user.
+  const rl = rateLimit(`assistant:${clientKey(request, user.id)}`, 20, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
   let body: { messages?: unknown };
   try {

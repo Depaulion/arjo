@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { telegramBotUsername } from "@/lib/telegram";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,10 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  // Cap code minting — 10/min per user.
+  const rl = rateLimit(`tglink:u:${user.id}`, 10, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
   const bot = telegramBotUsername();
   if (!bot) {

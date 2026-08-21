@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  const rl = rateLimit(`agent:u:${user.id}`, 30, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
   let body: Record<string, unknown> = {};
   try {
