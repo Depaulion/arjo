@@ -3,6 +3,10 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 export const runtime = "nodejs";
+// Generate on-demand (not prerendered): avoids a Windows-only build crash in
+// @vercel/og when the project path contains a space, and lets the image pick up
+// the icon file at request time.
+export const dynamic = "force-dynamic";
 export const alt = "Arjo — Save Together, on Arc";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
