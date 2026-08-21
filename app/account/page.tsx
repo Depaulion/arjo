@@ -66,6 +66,7 @@ import { GoalsView } from "@/components/dashboard/goals/goals-view";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { QuickSave } from "@/components/dashboard/save/quick-save";
 import { SavingsAgent } from "@/components/dashboard/savings-agent";
+import { ReceivePanel } from "@/components/wallet/receive-panel";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -657,6 +658,14 @@ export default async function AccountPage() {
             balance={availableBalance}
             currency={safeProfile.preferred_stablecoin}
             onChainEnabled={onChainEnabled}
+          />
+        </section>
+
+        {/* Receive — fund the wallet from any external wallet or exchange */}
+        <section className="scroll-mt-24">
+          <ReceivePanel
+            address={safeProfile.arc_wallet_address}
+            currency={safeProfile.preferred_stablecoin}
           />
         </section>
 
