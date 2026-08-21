@@ -109,18 +109,18 @@ export function ConnectWallet({
           {connected ? <BadgeCheck className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-medium">External wallet</p>
+          <p className="text-sm font-medium">Your connected wallet</p>
           <p className="text-xs text-muted-foreground">
             {connected ? (
               <>
-                Verified:{" "}
                 <span className="font-mono text-foreground">
                   {shortenHex(connected)}
                 </span>{" "}
-                — a trusted address you can cash out to.
+                — your self-custody wallet. Your savings live in your Arjo
+                account; you can cash out to this address.
               </>
             ) : (
-              "Connect a self-custody wallet (e.g. MetaMask) and sign to prove ownership — no gas, no spending permission."
+              "Connect a self-custody wallet (e.g. MetaMask) and sign to prove ownership — no gas, no spending permission. It becomes your trusted cash-out address."
             )}
           </p>
           {error && <p className="mt-1 text-xs text-destructive">{error}</p>}

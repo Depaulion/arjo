@@ -32,6 +32,10 @@ function GoogleIcon() {
 
 type Mode = "signin" | "signup";
 
+type EthProvider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+};
+
 export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -118,6 +122,27 @@ export function AuthForm() {
         statement: "Sign in to Arjo: group savings on Arc.",
       });
       if (error) throw error;
+
+      // Auto-link the wallet they just signed in with as their cash-out address
+      // (ownership already proven by the sign-in signature). Best-effort — never
+      // block the redirect on it.
+      try {
+        const eth = (window as unknown as { ethereum?: EthProvider }).ethereum;
+        const accounts = (await eth?.request({ method: "eth_accounts" })) as
+          | string[]
+          | undefined;
+        const addr = accounts?.[0];
+        if (addr) {
+          await fetch("/api/wallet/link-signin", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ address: addr }),
+          });
+        }
+      } catch {
+        /* linking is best-effort */
+      }
+
       router.push(redirect);
       router.refresh();
     } catch (err) {

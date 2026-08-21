@@ -49,9 +49,11 @@ export function ReceivePanel({
           <ArrowDownToLine className="h-5 w-5" />
         </span>
         <div>
-          <p className="text-base font-bold leading-tight">Receive {currency}</p>
+          <p className="text-base font-bold leading-tight">
+            Your Arjo savings account
+          </p>
           <p className="text-xs text-muted-foreground">
-            Fund your wallet from any external wallet or exchange.
+            Fund it with {currency} from any external wallet or exchange.
           </p>
         </div>
       </div>
@@ -65,7 +67,7 @@ export function ReceivePanel({
         <div className="min-w-0 flex-1 space-y-3">
           <div>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Your {ARC_TESTNET.name} address
+              Arjo wallet · deposit address ({ARC_TESTNET.name})
             </p>
             <p className="mt-1 break-all rounded-xl bg-secondary/60 px-3 py-2 font-mono text-xs">
               {address}
