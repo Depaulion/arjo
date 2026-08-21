@@ -11,6 +11,7 @@ import {
   Lock,
   PiggyBank,
   RefreshCw,
+  Code2,
   EyeOff,
   ShieldCheck,
   Sparkles,
@@ -43,6 +44,7 @@ const TOC = [
   { id: "security", label: "Security & custody" },
   { id: "pricing", label: "Pricing" },
   { id: "network", label: "Arc Testnet network" },
+  { id: "developers", label: "For developers" },
   { id: "roadmap", label: "Roadmap" },
   { id: "faq", label: "FAQ" },
 ];
@@ -91,6 +93,14 @@ function Section({
         {children}
       </div>
     </section>
+  );
+}
+
+function CodeBlock({ children }: { children: string }) {
+  return (
+    <pre className="overflow-x-auto rounded-xl border border-border bg-secondary/40 p-4 text-xs leading-relaxed text-foreground">
+      <code>{children}</code>
+    </pre>
   );
 }
 
@@ -605,6 +615,98 @@ export default function DocsPage() {
                   </a>
                 </Button>
               </div>
+            </Section>
+
+            <Section id="developers" title="For developers">
+              <p className="flex items-start gap-2">
+                <Code2 className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  Arjo is open source and composable. There isn&apos;t a hosted
+                  public API with keys yet (it&apos;s on the roadmap), but you can
+                  already build on it three ways: read its on-chain activity,
+                  deep-link into it, or fork and self-host.
+                </span>
+              </p>
+
+              <h3 className="pt-2 font-semibold text-foreground">
+                1. Read Arjo&apos;s on-chain activity (no auth)
+              </h3>
+              <p>
+                Every contribution, payout and yield mint settles in USDC on{" "}
+                {ARC_TESTNET.name}, so anyone can read it directly from the chain.
+                The platform vault holds pooled circle funds, savings and bonds —
+                query its USDC balance with any EVM library:
+              </p>
+              <CodeBlock>{`import { createPublicClient, http, erc20Abi } from "viem";
+
+const client = createPublicClient({
+  transport: http("${ARC_TESTNET.rpcUrl}"), // Arc Testnet, chain ${ARC_TESTNET.chainId}
+});
+
+const USDC  = "${ARC_USDC_ADDRESS}"; // native USDC precompile
+const VAULT = "0x7eb4a2323b24aaf8bc685d9211656044c3165120"; // Arjo platform vault
+
+const balance = await client.readContract({
+  address: USDC,
+  abi: erc20Abi,
+  functionName: "balanceOf",
+  args: [VAULT],
+});
+// balance is in 6-decimal units (divide by 1e6 for USDC)`}</CodeBlock>
+              <p>
+                Swap the token for USYC (
+                <span className="font-mono text-xs">
+                  0xe9185F0c5F296Ed1797AaE4238D26CCaBEadb86C
+                </span>
+                ) to read the vault&apos;s yield position, or view any address on
+                the{" "}
+                <a
+                  className="font-medium text-primary hover:underline"
+                  href={ARC_TESTNET.explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  block explorer
+                </a>
+                .
+              </p>
+
+              <h3 className="pt-2 font-semibold text-foreground">
+                2. Deep-link into Arjo from your app or bot
+              </h3>
+              <p>
+                Send users straight to the right screen — useful for community
+                bots, partner apps or referral flows:
+              </p>
+              <CodeBlock>{`const base = "https://arjo-defi.vercel.app";
+
+\`\${base}/circles/\${circleId}\`                       // a circle
+\`\${base}/circles/\${circleId}?invite=\${inviteCode}\`  // join a private circle
+\`\${base}/account#save\`                              // open the Save tab
+\`\${base}/account#community\`                         // discover public circles
+
+// The bot exposes the same over Telegram: /balance, /circles, /discover, /save`}</CodeBlock>
+
+              <h3 className="pt-2 font-semibold text-foreground">
+                3. Fork &amp; self-host
+              </h3>
+              <p>
+                The full stack is on GitHub: Next.js 14 (App Router), Supabase
+                (Postgres with row-level security, SECURITY-DEFINER RPCs, no
+                service-role key), Circle Programmable Wallets, and USYC on Arc.
+                Database changes are plain SQL migrations you apply in the
+                Supabase editor. Clone it, set your env, and extend it:
+              </p>
+              <CodeBlock>{`git clone https://github.com/Depaulion/arjo
+cd arjo
+cp .env.local.example .env.local   # add your Supabase + Circle keys
+npm install
+npm run dev                        # http://localhost:3000`}</CodeBlock>
+              <p className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
+                A hosted REST API with API keys (read circle/pot state, trigger
+                flows) is planned. Want to integrate something specific? Open an
+                issue on GitHub and tell us the endpoints you need.
+              </p>
             </Section>
 
             <Section id="roadmap" title="Roadmap">
