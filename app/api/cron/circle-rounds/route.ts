@@ -69,6 +69,7 @@ type AgentRow = {
   wallet_id: string | null;
   wallet_address: string | null;
   liquid_floor: number | string | null;
+  reserved: number | string | null;
   lock_days: number | string | null;
   min_sweep: number | string | null;
   currency: string | null;
@@ -311,7 +312,12 @@ async function handle(request: Request) {
     );
     if (!agentErr && Array.isArray(agents)) {
       for (const a of agents as AgentRow[]) {
-        const floor = round2(num(a.liquid_floor));
+        const setFloor = round2(num(a.liquid_floor));
+        const reserved = round2(num(a.reserved));
+        // Effective floor keeps the user's set amount PLUS what their circles
+        // will pull soon, so the agent never locks money needed for a
+        // contribution (circle-aware floor).
+        const floor = round2(setFloor + reserved);
         const minSweep = Math.max(0, round2(num(a.min_sweep)));
         const currency = a.currency ?? "USDC";
         if (!a.wallet_id || !a.wallet_address) {
@@ -327,7 +333,7 @@ async function handle(request: Request) {
         }
         const surplus = round2(balance - floor);
         // Respect the spending policy: only sweep genuine surplus above the
-        // floor, and skip dust below the user's minimum.
+        // effective floor, and skip dust below the user's minimum.
         if (surplus < Math.max(minSweep, 0.01)) {
           summary.agentSkipped += 1;
           continue;
@@ -355,11 +361,15 @@ async function handle(request: Request) {
             p_vault_address: potAddress,
             p_tx_hash: res.txHash,
           });
+          const keptNote =
+            reserved > 0
+              ? `kept ${setFloor} ${currency} liquid + reserved ${reserved} ${currency} for your circles`
+              : `kept ${setFloor} ${currency} liquid`;
           await notify(
             a.user_id,
             null,
             "agent_sweep",
-            `Your Savings Agent moved ${surplus} ${currency} of surplus into a ${apy}% SafeLock (kept ${floor} ${currency} liquid). It unlocks in ${lockDays} days.`
+            `Your Savings Agent moved ${surplus} ${currency} of surplus into a ${apy}% SafeLock (${keptNote}). It unlocks in ${lockDays} days.`
           );
           summary.agentSwept += 1;
         } catch {

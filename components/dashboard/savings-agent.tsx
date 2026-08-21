@@ -102,7 +102,11 @@ export function SavingsAgent({ currency = "USDC" }: { currency?: string }) {
             <span className="font-semibold text-emerald-500">
               {apy}% APY SafeLock
             </span>
-            . It never touches your floor — that&apos;s the limit you set.
+            . It never touches your floor — and it automatically{" "}
+            <span className="font-medium text-foreground">
+              reserves for upcoming circle contributions
+            </span>{" "}
+            too, so it won&apos;t lock money you&apos;ll need to pay in.
           </p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
