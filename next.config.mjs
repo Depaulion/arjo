@@ -58,7 +58,36 @@ function checkEnv() {
 
 checkEnv();
 
+/**
+ * Baseline HTTP security headers applied to every response. Covers the common
+ * gaps: transport security (HSTS), clickjacking (frame-options), MIME sniffing,
+ * referrer leakage, and unused browser features. A strict Content-Security-
+ * Policy is intentionally NOT set here yet — a wrong CSP silently breaks Next.js
+ * hydration and the app's Circle/Supabase/Anthropic calls, so it needs its own
+ * careful, tested pass.
+ */
+const securityHeaders = [
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  },
+  { key: "X-DNS-Prefetch-Control", value: "on" },
+];
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  // Don't advertise the framework (minor info-disclosure hardening).
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
+};
 
 export default nextConfig;
