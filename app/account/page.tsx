@@ -662,7 +662,17 @@ export default async function AccountPage() {
 
         {/* Savings Agent — auto-sweep idle cash into yield (agentic) */}
         <section className="scroll-mt-24">
-          <SavingsAgent currency={safeProfile.preferred_stablecoin} />
+          <SavingsAgent
+            currency={safeProfile.preferred_stablecoin}
+            history={allPlans
+              .filter((p) => p.name === "Auto-saved by agent")
+              .map((p) => ({
+                amount: p.principal,
+                apy: p.apy_bonus,
+                createdAt: p.created_at,
+                currency: p.currency,
+              }))}
+          />
         </section>
 
         {/* Smart savings: SafeLock vaults + gamification */}

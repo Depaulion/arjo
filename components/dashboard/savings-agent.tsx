@@ -10,13 +10,39 @@ import { Button } from "@/components/ui/button";
 
 const LOCK_OPTIONS = [30, 90, 180] as const;
 
+export type AgentSweep = {
+  amount: number;
+  apy: number;
+  createdAt: string;
+  currency: string;
+};
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const day = 86_400_000;
+  if (diff < day) return "today";
+  const days = Math.floor(diff / day);
+  return days === 1 ? "yesterday" : `${days} days ago`;
+}
+
+function fmt(n: number) {
+  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 /**
  * Savings Agent — an opt-in agent that keeps the wallet at a liquid floor and
  * autonomously sweeps surplus USDC into a SafeLock (yield) each day. The floor
  * is the spending policy the agent must respect (never sweeps below it), mirror-
  * ing Circle Agent Stack's model. Reads/writes the policy via /api/agent.
  */
-export function SavingsAgent({ currency = "USDC" }: { currency?: string }) {
+export function SavingsAgent({
+  currency = "USDC",
+  history = [],
+}: {
+  currency?: string;
+  /** Past sweeps the agent has made, newest first. */
+  history?: AgentSweep[];
+}) {
   const router = useRouter();
   const [loaded, setLoaded] = useState(false);
   const [enabled, setEnabled] = useState(false);
@@ -191,6 +217,38 @@ export function SavingsAgent({ currency = "USDC" }: { currency?: string }) {
             You stay in control: the agent only acts within the floor you set,
             every action is logged and notified, and you can turn it off anytime.
           </p>
+
+          {history.length > 0 && (
+            <div className="mt-4 border-t border-border/60 pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Agent activity
+              </p>
+              <ul className="space-y-2">
+                {history.slice(0, 5).map((s, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
+                        <Bot className="h-3.5 w-3.5" />
+                      </span>
+                      <span>
+                        Moved{" "}
+                        <span className="font-semibold">
+                          {fmt(s.amount)} {s.currency}
+                        </span>{" "}
+                        into a {s.apy}% SafeLock
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {timeAgo(s.createdAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       ) : (
         <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
