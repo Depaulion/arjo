@@ -34,6 +34,8 @@ export type Profile = {
   reputation_history: ReputationEvent[];
   /** Linked Telegram chat the bot DMs notifications to (migration 0023). */
   telegram_chat_id: string | null;
+  /** External self-custody wallet the user proved ownership of (migration 0030). */
+  verified_wallet_address: string | null;
   created_at: string;
   updated_at: string;
 };

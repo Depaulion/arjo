@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/card";
 import { ProfileForm } from "@/components/auth/profile-form";
 import { ConnectTelegram } from "@/components/dashboard/settings/connect-telegram";
+import { ConnectWallet } from "@/components/wallet/connect-wallet";
 import { AskArjo } from "@/components/dashboard/ask-arjo";
 import { WalletPanel } from "@/components/wallet/wallet-panel";
 import { WalletProvisioner } from "@/components/wallet/wallet-provisioner";
@@ -139,6 +140,7 @@ export default async function AccountPage() {
     ai_risk_score: "low",
     reputation_history: [],
     telegram_chat_id: null,
+    verified_wallet_address: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -916,6 +918,23 @@ export default async function AccountPage() {
             <CardContent>
               <ConnectTelegram
                 initialLinked={Boolean(safeProfile.telegram_chat_id)}
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Connected wallet */}
+        <section className="scroll-mt-24">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Connected wallet</CardTitle>
+              <CardDescription>
+                Verify an external wallet to use as a trusted cash-out address.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConnectWallet
+                initialConnected={safeProfile.verified_wallet_address}
               />
             </CardContent>
           </Card>
