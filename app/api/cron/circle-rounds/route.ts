@@ -6,6 +6,7 @@ import { ensureVault } from "@/lib/vault";
 import { sendUsdc } from "@/lib/circle-transfer";
 import { getUsdcBalance } from "@/lib/arc-onchain";
 import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
+import { lockApyPct } from "@/lib/yield-engine";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,6 +64,16 @@ type UpcomingRow = {
 
 type ChatIdRow = { user_id: string; chat_id: string | null };
 
+type AgentRow = {
+  user_id: string;
+  wallet_id: string | null;
+  wallet_address: string | null;
+  liquid_floor: number | string | null;
+  lock_days: number | string | null;
+  min_sweep: number | string | null;
+  currency: string | null;
+};
+
 const num = (v: number | string | null | undefined): number => {
   const n = typeof v === "string" ? Number(v) : v ?? 0;
   return Number.isFinite(n as number) ? (n as number) : 0;
@@ -84,6 +95,8 @@ async function handle(request: Request) {
     sendFailed: 0,
     skipped: 0,
     telegramSent: 0,
+    agentSwept: 0,
+    agentSkipped: 0,
     onChain: false as boolean,
   };
 
@@ -134,7 +147,7 @@ async function handle(request: Request) {
   // linked. Returns the RPC error (if any) so callers can count successes.
   const notify = async (
     userId: string,
-    circleId: string,
+    circleId: string | null,
     type: string,
     message: string
   ) => {
@@ -283,6 +296,77 @@ async function handle(request: Request) {
         `Auto-debit for "${d.circle_name}" couldn't be sent onchain. We'll retry on the next run.`
       );
       summary.sendFailed += 1;
+    }
+  }
+
+  // --- Pass 3: Savings Agent sweeps ------------------------------------------
+  // For each user who enabled the agent, keep their wallet at its liquid floor
+  // and sweep the surplus into a SafeLock (yield). The floor is the spending
+  // policy: we never move funds below it. Best-effort per user — a failure on
+  // one never blocks the others.
+  if (summary.onChain && potAddress) {
+    const { data: agents, error: agentErr } = await supabase.rpc(
+      "due_agent_sweeps",
+      { p_secret: secret }
+    );
+    if (!agentErr && Array.isArray(agents)) {
+      for (const a of agents as AgentRow[]) {
+        const floor = round2(num(a.liquid_floor));
+        const minSweep = Math.max(0, round2(num(a.min_sweep)));
+        const currency = a.currency ?? "USDC";
+        if (!a.wallet_id || !a.wallet_address) {
+          summary.agentSkipped += 1;
+          continue;
+        }
+        let balance: number;
+        try {
+          balance = await getUsdcBalance(a.wallet_address);
+        } catch {
+          summary.agentSkipped += 1;
+          continue;
+        }
+        const surplus = round2(balance - floor);
+        // Respect the spending policy: only sweep genuine surplus above the
+        // floor, and skip dust below the user's minimum.
+        if (surplus < Math.max(minSweep, 0.01)) {
+          summary.agentSkipped += 1;
+          continue;
+        }
+        const lockDays = Math.max(1, Math.round(num(a.lock_days) || 30));
+        const apy = lockApyPct(lockDays);
+        const lockUntil = new Date(
+          Date.now() + lockDays * 24 * 60 * 60 * 1000
+        ).toISOString();
+        try {
+          const res = await sendUsdc({
+            fromWalletId: a.wallet_id,
+            toAddress: potAddress as string,
+            amount: surplus,
+            idempotencyKey: `agentsweep:${a.user_id}:${new Date().toISOString().slice(0, 10)}`,
+            refId: `agentsweep:${a.user_id}`,
+          });
+          await supabase.rpc("record_agent_sweep", {
+            p_secret: secret,
+            p_user_id: a.user_id,
+            p_amount: surplus,
+            p_currency: currency,
+            p_apy: apy,
+            p_lock_until: lockUntil,
+            p_vault_address: potAddress,
+            p_tx_hash: res.txHash,
+          });
+          await notify(
+            a.user_id,
+            null,
+            "agent_sweep",
+            `Your Savings Agent moved ${surplus} ${currency} of surplus into a ${apy}% SafeLock (kept ${floor} ${currency} liquid). It unlocks in ${lockDays} days.`
+          );
+          summary.agentSwept += 1;
+        } catch {
+          // Send rejected this run — leave it; next run retries with a fresh key.
+          summary.agentSkipped += 1;
+        }
+      }
     }
   }
 

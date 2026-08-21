@@ -66,7 +66,9 @@ export type NotificationType =
   | "auto_debit_paid"
   | "auto_debit_failed"
   // Round-due reminder for members not on auto-debit (migration 0023).
-  | "round_reminder";
+  | "round_reminder"
+  // Savings Agent swept surplus into a SafeLock (migration 0028).
+  | "agent_sweep";
 
 /** A row from public.notifications. */
 export type Notification = {

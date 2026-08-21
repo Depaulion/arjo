@@ -65,6 +65,7 @@ import { MyCircles } from "@/components/dashboard/circles/my-circles";
 import { GoalsView } from "@/components/dashboard/goals/goals-view";
 import { SavingsPlans } from "@/components/dashboard/savings-plans";
 import { QuickSave } from "@/components/dashboard/save/quick-save";
+import { SavingsAgent } from "@/components/dashboard/savings-agent";
 import { GamificationCard } from "@/components/dashboard/gamification-card";
 import { FinancialPlanner } from "@/components/dashboard/financial-planner";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -657,6 +658,11 @@ export default async function AccountPage() {
             currency={safeProfile.preferred_stablecoin}
             onChainEnabled={onChainEnabled}
           />
+        </section>
+
+        {/* Savings Agent — auto-sweep idle cash into yield (agentic) */}
+        <section className="scroll-mt-24">
+          <SavingsAgent currency={safeProfile.preferred_stablecoin} />
         </section>
 
         {/* Smart savings: SafeLock vaults + gamification */}
