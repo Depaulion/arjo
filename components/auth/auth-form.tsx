@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ export function AuthForm() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -89,6 +90,49 @@ export function AuthForm() {
     }
   }
 
+  async function handleWallet() {
+    setError(null);
+    setMessage(null);
+    const hasWallet =
+      typeof window !== "undefined" &&
+      Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+    if (!hasWallet) {
+      setError(
+        "No browser wallet detected. Install MetaMask (or another wallet) to sign in with your wallet."
+      );
+      return;
+    }
+    setWalletLoading(true);
+    try {
+      // Supabase Web3 auth: uses the injected wallet, builds a Sign-In-With-
+      // Ethereum message, and mints a session — no service-role key needed.
+      // Requires the Ethereum Web3 provider to be enabled in Supabase Auth.
+      const client = supabase.auth as unknown as {
+        signInWithWeb3: (c: {
+          chain: "ethereum";
+          statement: string;
+        }) => Promise<{ error: { message: string } | null }>;
+      };
+      const { error } = await client.signInWithWeb3({
+        chain: "ethereum",
+        statement: "Sign in to Arjo: group savings on Arc.",
+      });
+      if (error) throw error;
+      router.push(redirect);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Wallet sign-in failed.";
+      // Friendlier hint when the provider isn't enabled in Supabase yet.
+      setError(
+        /provider|not enabled|disabled|unsupported/i.test(msg)
+          ? "Wallet sign-in isn't enabled yet. (Enable the Web3/Ethereum provider in Supabase Auth.)"
+          : msg
+      );
+    } finally {
+      setWalletLoading(false);
+    }
+  }
+
   async function handleGoogle() {
     setError(null);
     setGoogleLoading(true);
@@ -118,6 +162,22 @@ export function AuthForm() {
       >
         {googleLoading ? <Loader2 className="animate-spin" /> : <GoogleIcon />}
         Continue with Google
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="w-full"
+        onClick={handleWallet}
+        disabled={walletLoading || googleLoading || loading}
+      >
+        {walletLoading ? (
+          <Loader2 className="animate-spin" />
+        ) : (
+          <Wallet className="h-4 w-4" />
+        )}
+        Continue with wallet
       </Button>
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
